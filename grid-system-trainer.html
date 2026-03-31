@@ -952,18 +952,17 @@ function genWrapping() {
   // Only accept positions on a DIFFERENT string than Home
   const diffStringPositions = allPositions.filter(p => p.string !== homePos.string);
 
-  // Build context hint based on difficulty
+  // Build context hint — direction matters!
+  // Toward G (thinner) = +5 per string. Toward E (thicker) = +7 per string.
+  // Which direction the player needs depends on where Home is.
+  const canGoUp = homePos.string < 3; // can move toward G
+  const canGoDown = homePos.string > 0; // can move toward E
   let context;
   if (state.difficulty === 'easy') {
-    context = `One string up from Home = +5 semitones. Same fret, next string.`;
+    if (canGoUp) context = `Toward G (thinner string) = +5. Same fret, one string toward G.`;
+    else context = `Toward E (thicker string) = +7. Same fret, one string toward E.`;
   } else {
-    const nStrings = Math.ceil(targetDist / 5);
-    const remainder = targetDist % 5;
-    if (remainder === 0) {
-      context = `${targetDist} ÷ 5 = ${nStrings} string${nStrings > 1 ? 's' : ''} up, same fret.`;
-    } else {
-      context = `Think: which string crossing gets close to ${targetDist}? Then adjust frets.`;
-    }
+    context = `Toward G = +5 per string. Toward E = +7 per string. Then adjust frets.`;
   }
 
   return {
@@ -1407,7 +1406,7 @@ const scaffolding = {
     distance: 'You\'ll see Home and a target marked on the fretboard. Count the semitones between them. Same string = count frets. Different string = add 5 per string crossed, then count frets.',
     map_picker: 'Blues map: 0, 3, 5, 6, 7, 10. Rock map: 0, 2, 3, 5, 7, 8, 10. They share 0, 3, 5, 7, 10. The unique ones give each genre its character — 6 (Grit) is blues, 2 and 8 are rock.',
     strong_beat: 'Beats 1 and 3 are strong — they carry the rhythm. Your ear expects stability there: Home (0), Foundation (5), or Power (7). Beats 2 and 4 are weak — any map distance works for colour.',
-    wrapping: 'Each string up adds 5 to the distance. So from Home, same fret one string up = distance 5. For distance 7: go one string up (+5) then 2 frets up (+2) = 7. The feedback will walk you through the maths each time.',
+    wrapping: 'Direction matters! Toward G (thinner) = +5 per string. Toward E (thicker) = +7 per string. So from G, one string toward E at the same fret = distance 7, not 5. The feedback walks you through the maths each time.',
     fretboard_distance: 'You know the distance name — now find where it lives on the neck. Remember: same distance appears in multiple places. The shape stays the same regardless of where Home is.',
     core_moves: 'These are the bread-and-butter patterns. The shape of each move is identical no matter where Home is — learn the physical pattern once and it works everywhere.',
     jam: 'A chord is called, a genre is set. You have 4 beats to fill. Strong beats (1 and 3) want Home, Foundation, or Power. Weak beats (2 and 4) take any map distance. Think ahead.',
@@ -1441,26 +1440,32 @@ function spatialTip(homeSem, homePos, targetS, targetF) {
 
 // Detailed wrapping walkthrough for wrong answers
 // Shows: what you tapped + why it's wrong + how to find the right answer
+// Direction: toward G (thinner, higher index) = +5. Toward E (thicker, lower index) = +7.
+function stringDirection(fromS, toS) {
+  if (toS > fromS) return 'toward G';
+  if (toS < fromS) return 'toward E';
+  return 'same string';
+}
+
 function wrappingWalkthrough(homeSem, homePos, tappedS, tappedF, targetDist) {
   const tappedDist = distFrom(homeSem, tappedS, tappedF);
   const stringDiff = tappedS - homePos.string;
   const fretDiff = tappedF - homePos.fret;
   const stringsAway = Math.abs(stringDiff);
-  const direction = stringDiff > 0 ? 'up' : 'down';
+  const dir = stringDirection(homePos.string, tappedS);
+  const perString = stringDiff > 0 ? 5 : 7;
 
   // The actual string contribution: compute distance at same fret on tapped string
-  // Going UP a string = +5 per string. Going DOWN = +7 per string (i.e. -5 mod 12).
   const sameFretDist = distFrom(homeSem, tappedS, homePos.fret);
 
   // Part 1: explain what the player tapped and the math behind it
   let explain = '';
   if (stringsAway > 0) {
-    const perString = stringDiff > 0 ? 5 : 7;
-    explain = `${posLabel(tappedS, tappedF)}: ${stringsAway} string${stringsAway > 1 ? 's' : ''} ${direction} = ${sameFretDist}`;
+    explain = `${posLabel(tappedS, tappedF)}: ${stringsAway} ${dir} (${stringsAway}×${perString} = ${sameFretDist})`;
     if (fretDiff > 0) {
-      explain += `, +${fretDiff} fret${fretDiff !== 1 ? 's' : ''}`;
+      explain += ` +${fretDiff} fret${fretDiff !== 1 ? 's' : ''}`;
     } else if (fretDiff < 0) {
-      explain += `, ${fretDiff} fret${Math.abs(fretDiff) !== 1 ? 's' : ''}`;
+      explain += ` ${fretDiff} fret${Math.abs(fretDiff) !== 1 ? 's' : ''}`;
     }
     explain += ` = distance ${tappedDist}.`;
   } else {
@@ -1482,16 +1487,16 @@ function wrappingWalkthrough(homeSem, homePos, tappedS, tappedF, targetDist) {
     });
     const nStrDiff = nearest.string - homePos.string;
     const nStrAway = Math.abs(nStrDiff);
-    const nStrDir = nStrDiff > 0 ? 'up' : 'down';
+    const nDir = stringDirection(homePos.string, nearest.string);
+    const nPerStr = nStrDiff > 0 ? 5 : 7;
     const nFretDiff = nearest.fret - homePos.fret;
-    // Compute same-fret distance on the correct string
     const nSameFretDist = distFrom(homeSem, nearest.string, homePos.fret);
 
-    guide = ` To find ${targetDist}: ${nStrAway} string${nStrAway > 1 ? 's' : ''} ${nStrDir} = ${nSameFretDist}`;
+    guide = ` To find ${targetDist}: ${nStrAway} ${nDir} (${nStrAway}×${nPerStr} = ${nSameFretDist})`;
     if (nFretDiff > 0) {
-      guide += `, +${nFretDiff} fret${nFretDiff !== 1 ? 's' : ''}`;
+      guide += ` +${nFretDiff} fret${nFretDiff !== 1 ? 's' : ''}`;
     } else if (nFretDiff < 0) {
-      guide += `, ${nFretDiff} fret${Math.abs(nFretDiff) !== 1 ? 's' : ''}`;
+      guide += ` ${nFretDiff} fret${Math.abs(nFretDiff) !== 1 ? 's' : ''}`;
     }
     guide += ` → ${posLabel(nearest.string, nearest.fret)}.`;
   }
@@ -1580,11 +1585,12 @@ function handleFretboardTap(s, f) {
       const stringDiff = s - q.homePos.string;
       const stringsAway = Math.abs(stringDiff);
       const fretDiff = f - q.homePos.fret;
-      const strDir = stringDiff > 0 ? 'up' : 'down';
+      const dir = stringDirection(q.homePos.string, s);
+      const perStr = stringDiff > 0 ? 5 : 7;
       const sameFretDist = distFrom(q.homeSem, s, q.homePos.fret);
-      let mathTip = `${stringsAway} string${stringsAway > 1 ? 's' : ''} ${strDir} (${sameFretDist})`;
-      if (fretDiff > 0) mathTip += ` + ${fretDiff} fret${fretDiff !== 1 ? 's' : ''}`;
-      else if (fretDiff < 0) mathTip += ` − ${Math.abs(fretDiff)} fret${Math.abs(fretDiff) !== 1 ? 's' : ''}`;
+      let mathTip = `${stringsAway} ${dir} (${stringsAway}×${perStr} = ${sameFretDist})`;
+      if (fretDiff > 0) mathTip += ` +${fretDiff} fret${fretDiff !== 1 ? 's' : ''}`;
+      else if (fretDiff < 0) mathTip += ` −${Math.abs(fretDiff)} fret${Math.abs(fretDiff) !== 1 ? 's' : ''}`;
       mathTip += ` = ${dist}.`;
       state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)}: ${mathTip} Other positions highlighted.`;
     } else if (q.mode === 'find_home') {
