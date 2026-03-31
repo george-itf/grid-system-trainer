@@ -7,11 +7,50 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>The Grid System — Bass Trainer</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg-base: #1a1a2e;
+    --bg-elevated: #16213e;
+    --bg-surface: #0d1117;
+    --bg-card: linear-gradient(135deg, #16213e 0%, #0f1927 100%);
+
+    --text-primary: #fff;
+    --text-secondary: #a0a0b0;
+    --text-tertiary: #6a6a7a;
+
+    --accent: #4a9eff;
+    --accent-dim: rgba(74, 158, 255, 0.15);
+    --success: #2ecc71;
+    --success-dim: rgba(46, 204, 113, 0.15);
+    --error: #e74c3c;
+    --error-dim: rgba(231, 76, 60, 0.15);
+    --warning: #f0a500;
+    --warning-dim: rgba(240, 165, 0, 0.15);
+    --hint: #ffc107;
+    --hint-dim: rgba(255, 193, 7, 0.12);
+
+    --blues-bg: rgba(108, 52, 131, 0.3);
+    --blues-text: #d7bde2;
+    --blues-border: rgba(108, 52, 131, 0.5);
+    --rock-bg: rgba(192, 57, 43, 0.3);
+    --rock-text: #fadbd8;
+    --rock-border: rgba(192, 57, 43, 0.5);
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.45);
+
+    --font-mono: 'Courier New', Monaco, monospace;
+  }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    background: #1a1a2e;
+    background: var(--bg-base);
     color: #e0e0e0;
     min-height: 100vh;
     min-height: 100dvh;
@@ -27,33 +66,40 @@
   }
 
   h1 {
-    font-size: clamp(1.2em, 4vw, 1.6em);
-    color: #fff;
+    font-size: clamp(1.3em, 5vw, 1.7em);
+    color: var(--text-primary);
     margin-bottom: 4px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
   }
 
   .subtitle {
-    color: #888;
-    font-size: 0.85em;
+    color: var(--text-secondary);
+    font-size: 0.78em;
     margin-bottom: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0.8;
   }
 
-  /* Score bar */
+  /* ── Score Bar ── */
   .score-bar {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 16px;
     margin-bottom: 20px;
     padding: 10px 14px;
-    background: #16213e;
-    border-radius: 8px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
     font-size: 0.82em;
+    box-shadow: var(--shadow-sm);
   }
   .score-bar span { color: #aaa; white-space: nowrap; }
-  .score-bar .val { color: #fff; font-weight: 600; }
-  .streak { color: #f0a500 !important; }
+  .score-bar .val { color: var(--text-primary); font-weight: 600; }
+  .streak-val { color: var(--warning) !important; }
+  .streak-fire { display: inline; }
 
-  /* Mode selector */
+  /* ── Mode Select ── */
   .modes {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -62,27 +108,54 @@
   }
 
   .mode-btn {
-    background: #16213e;
-    border: 2px solid #2a2a4a;
-    border-radius: 10px;
+    background: var(--bg-card);
+    border: 2px solid #2a3a5a;
+    border-radius: var(--radius-md);
     padding: 14px;
     cursor: pointer;
     text-align: left;
-    transition: all 0.15s;
-    -webkit-user-select: none;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     user-select: none;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    animation: mode-fade-up 0.5s ease-out forwards;
   }
-  .mode-btn:hover { border-color: #4a6fa5; background: #1a2744; }
-  .mode-btn:active { border-color: #4a9eff; background: #1a2744; transform: scale(0.98); }
-  .mode-btn h3 { color: #fff; font-size: 0.95em; margin-bottom: 4px; }
-  .mode-btn p { color: #888; font-size: 0.75em; line-height: 1.4; }
+  .mode-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(74, 158, 255, 0.08) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .mode-btn:active { transform: scale(0.97); border-color: var(--accent); }
+  .mode-btn:active::before { opacity: 1; }
+  .mode-btn h3 { color: var(--text-primary); font-size: 0.95em; margin-bottom: 4px; font-weight: 600; }
+  .mode-btn p { color: var(--text-secondary); font-size: 0.73em; line-height: 1.4; }
+  .mode-btn .difficulty-stars { font-size: 0.65em; color: var(--warning); margin-top: 6px; letter-spacing: 1px; }
 
-  /* Game area */
+  @keyframes mode-fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Game Area ── */
   .game-area {
-    background: #16213e;
-    border-radius: 12px;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
     padding: 20px;
     min-height: 200px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(74, 158, 255, 0.08);
+    animation: game-area-fade 0.35s ease-out;
+  }
+
+  @keyframes game-area-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .game-header {
@@ -94,33 +167,68 @@
   }
 
   .question {
-    font-size: clamp(0.95em, 3vw, 1.15em);
-    color: #fff;
+    font-size: clamp(1em, 3.2vw, 1.2em);
+    color: var(--text-primary);
     margin-bottom: 8px;
     line-height: 1.5;
+    font-weight: 600;
+    letter-spacing: 0.2px;
   }
 
   .context {
-    color: #888;
+    color: var(--text-secondary);
     font-size: 0.82em;
     margin-bottom: 16px;
-    line-height: 1.4;
+    line-height: 1.5;
   }
 
-  /* Fretboard - the big mobile challenge */
+  /* ── Difficulty Selector ── */
+  .diff-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .diff-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 2px solid #2a3a5a;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    user-select: none;
+  }
+  .diff-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .diff-btn:active { transform: scale(0.96); }
+
+  /* ── Fretboard ── */
   .fretboard {
-    background: #0d1117;
-    border-radius: 8px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
     padding: 10px 6px;
     margin-bottom: 16px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+    position: relative;
   }
 
-  .fretboard table {
-    border-collapse: collapse;
-    /* Don't set width:100% - let it overflow and scroll on mobile */
+  .scroll-hint {
+    color: var(--text-tertiary);
+    font-size: 0.7em;
+    text-align: center;
+    margin-bottom: 6px;
   }
+
+  .fretboard table { border-collapse: collapse; }
 
   .fretboard td {
     text-align: center;
@@ -131,21 +239,39 @@
   }
 
   .fretboard .string-label {
-    color: #888;
-    font-weight: 600;
+    color: #999;
+    font-weight: 700;
     width: 24px;
     min-width: 24px;
-    font-size: 0.8em;
+    font-size: 0.82em;
     position: sticky;
     left: 0;
-    background: #0d1117;
+    background: var(--bg-surface);
     z-index: 2;
+    font-family: var(--font-mono);
   }
 
   .fretboard .fret-num {
-    color: #444;
-    font-size: 0.65em;
+    color: #777;
+    font-size: 0.7em;
     padding: 2px;
+    font-family: var(--font-mono);
+  }
+  /* Fret marker dots */
+  .fretboard .fret-num.marker { color: var(--accent); font-weight: 700; }
+  .fretboard .fret-num.marker::after {
+    content: '';
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(74, 158, 255, 0.35);
+    margin: 2px auto 0;
+  }
+  .fretboard .fret-num.double-marker::after {
+    width: 8px;
+    height: 5px;
+    border-radius: 3px;
   }
 
   .fret-cell {
@@ -157,20 +283,73 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.1s;
-    font-weight: 500;
-    font-size: 0.8em;
-    -webkit-user-select: none;
+    transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-weight: 600;
+    font-size: 0.78em;
     user-select: none;
+    border: 2px solid transparent;
   }
 
-  .fret-cell:active { transform: scale(0.9); }
-  .fret-cell.home-marker { background: #4a9eff33; color: #4a9eff; font-weight: 700; }
-  .fret-cell.correct { background: #2ecc71; color: #fff; }
-  .fret-cell.wrong { background: #e74c3c; color: #fff; }
-  .fret-cell.hint { background: #f0a50044; color: #f0a500; }
+  .fret-cell:active { transform: scale(0.88); }
+  .fret-cell.home-marker {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  .fret-cell.home-persistent {
+    background: rgba(74, 158, 255, 0.08);
+    border: 2px dashed rgba(74, 158, 255, 0.3);
+    color: rgba(74, 158, 255, 0.5);
+    font-weight: 700;
+  }
+  .fret-cell.correct {
+    background: var(--success-dim);
+    color: var(--success);
+    border-color: var(--success);
+    animation: correct-pulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .fret-cell.wrong {
+    background: var(--error-dim);
+    color: var(--error);
+    border-color: var(--error);
+    animation: wrong-shake 0.4s ease-in-out;
+  }
+  .fret-cell.hint {
+    background: var(--hint-dim);
+    color: var(--hint);
+    border: 1px dashed rgba(255, 193, 7, 0.5);
+    animation: hint-glow 0.5s ease-out;
+  }
+  .fret-cell.sequence-target {
+    background: rgba(155, 89, 182, 0.2);
+    color: #bb8fce;
+    border-color: #8e44ad;
+  }
+  .fret-cell.sequence-done {
+    background: var(--success-dim);
+    color: var(--success);
+    border-color: var(--success);
+  }
 
-  /* Answer buttons */
+  @keyframes correct-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.5); }
+    50% { transform: scale(1.15); box-shadow: 0 0 16px 4px rgba(46, 204, 113, 0.3); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+  }
+  @keyframes wrong-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+  }
+  @keyframes hint-glow {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* ── Answer Buttons ── */
   .answers {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -181,37 +360,46 @@
   .answer-btn {
     background: #1a2744;
     border: 2px solid #2a3a5a;
-    border-radius: 8px;
-    padding: 12px 10px;
+    border-radius: var(--radius-md);
+    padding: 14px 10px;
     color: #e0e0e0;
     font-size: 0.88em;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.1s;
+    transition: all 0.15s;
     text-align: center;
-    -webkit-user-select: none;
     user-select: none;
   }
   .answer-btn:active { transform: scale(0.97); }
-  .answer-btn.correct { border-color: #2ecc71; background: #1a3a2a; color: #2ecc71; }
-  .answer-btn.wrong { border-color: #e74c3c; background: #3a1a1a; color: #e74c3c; }
-  .answer-btn.reveal { border-color: #2ecc71; background: #1a3a2a; color: #2ecc71; }
-  .answer-btn:disabled { cursor: default; opacity: 0.85; }
+  .answer-btn.correct {
+    border-color: var(--success);
+    background: var(--success-dim);
+    color: var(--success);
+    animation: correct-pulse 0.5s ease-out;
+  }
+  .answer-btn.wrong {
+    border-color: var(--error);
+    background: var(--error-dim);
+    color: var(--error);
+    animation: wrong-shake 0.4s ease-in-out;
+  }
+  .answer-btn:disabled { cursor: default; opacity: 0.7; }
+  .answer-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  /* Jam mode */
+  /* ── Jam Mode ── */
   .jam-bar {
     display: flex;
     gap: 12px;
     align-items: center;
     margin-bottom: 12px;
   }
-
   .chord-display {
-    font-size: clamp(1.8em, 6vw, 2.4em);
+    font-size: clamp(1.8em, 6vw, 2.6em);
     font-weight: 700;
-    color: #4a9eff;
+    color: var(--accent);
     min-width: 50px;
+    font-family: var(--font-mono);
   }
-
   .genre-tag {
     display: inline-block;
     padding: 4px 12px;
@@ -219,19 +407,14 @@
     font-size: 0.78em;
     font-weight: 600;
   }
-  .genre-tag.blues { background: #6c3483; color: #d7bde2; }
-  .genre-tag.rock { background: #c0392b; color: #fadbd8; }
+  .genre-tag.blues { background: var(--blues-bg); color: var(--blues-text); border: 1px solid var(--blues-border); }
+  .genre-tag.rock { background: var(--rock-bg); color: var(--rock-text); border: 1px solid var(--rock-border); }
 
-  .beat-indicators {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-
+  .beat-indicators { display: flex; gap: 10px; margin-bottom: 14px; }
   .beat {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -241,45 +424,86 @@
     background: #1a2744;
     color: #888;
     flex-shrink: 0;
+    transition: all 0.2s;
+    font-family: var(--font-mono);
   }
-  .beat.active { border-color: #4a9eff; color: #4a9eff; background: #1a2744; }
-  .beat.filled { border-color: #2ecc71; color: #2ecc71; background: #1a3a2a; }
-  .beat.strong { border-color: #f0a500; }
-  .beat.strong.active { border-color: #f0a500; color: #f0a500; }
+  .beat.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(74, 158, 255, 0.2); }
+  .beat.filled { border-color: var(--success); color: var(--success); background: var(--success-dim); animation: beat-fill 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .beat.strong { border-color: var(--warning); }
+  .beat.strong.active { border-color: var(--warning); color: var(--warning); box-shadow: 0 0 12px rgba(240, 165, 0, 0.2); }
 
-  /* Feedback */
+  @keyframes beat-fill {
+    from { transform: scale(0.85); }
+    to { transform: scale(1); }
+  }
+
+  /* ── Feedback ── */
   .feedback {
-    padding: 12px 14px;
-    border-radius: 8px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
     margin-top: 14px;
     font-size: 0.85em;
-    line-height: 1.5;
+    line-height: 1.6;
+    font-weight: 500;
+    animation: feedback-slide 0.3s ease-out;
   }
-  .feedback.correct { background: #1a3a2a; color: #2ecc71; border: 1px solid #2ecc7133; }
-  .feedback.wrong { background: #3a1a1a; color: #e0a0a0; border: 1px solid #e74c3c33; }
-  .feedback.info { background: #1a2744; color: #aac; border: 1px solid #4a9eff33; }
+  .feedback.correct { background: var(--success-dim); color: var(--success); border: 1px solid rgba(46, 204, 113, 0.2); }
+  .feedback.wrong { background: var(--error-dim); color: #e0a0a0; border: 1px solid rgba(231, 76, 60, 0.2); }
+  .feedback.info { background: var(--accent-dim); color: #aac; border: 1px solid rgba(74, 158, 255, 0.2); }
 
+  @keyframes feedback-slide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Streak celebration */
+  .streak-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.95em;
+    z-index: 100;
+    animation: toast-pop 2s ease-out forwards;
+    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.4);
+    pointer-events: none;
+  }
+  @keyframes toast-pop {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.8); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.05); }
+    25% { transform: translateX(-50%) translateY(0) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  }
+
+  /* ── Buttons ── */
   .next-btn {
-    background: #4a9eff;
+    background: var(--accent);
     border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    padding: 14px 24px;
     color: #fff;
     font-size: 0.92em;
     font-weight: 600;
     cursor: pointer;
     margin-top: 14px;
-    transition: background 0.15s;
-    -webkit-user-select: none;
-    user-select: none;
     width: 100%;
+    user-select: none;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.15s;
   }
-  .next-btn:active { background: #3a7edf; transform: scale(0.98); }
+  .next-btn:active { transform: scale(0.98); background: #3a8edf; }
+  .next-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .back-btn {
     background: #2a3a5a;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 8px 14px;
     color: #ccc;
     font-size: 0.8em;
@@ -287,55 +511,73 @@
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
+    transition: all 0.15s;
   }
+  .back-btn:active { transform: scale(0.96); }
 
-  .scroll-hint {
-    color: #555;
-    font-size: 0.72em;
-    text-align: center;
-    margin-top: -10px;
-    margin-bottom: 10px;
+  /* ── Sequence steps (Core Moves mode) ── */
+  .sequence-steps {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
   }
+  .seq-step {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+    border: 2px solid #2a3a5a;
+    background: #1a2744;
+    color: #888;
+    font-family: var(--font-mono);
+  }
+  .seq-step.active { border-color: #8e44ad; color: #bb8fce; background: rgba(155, 89, 182, 0.15); }
+  .seq-step.done { border-color: var(--success); color: var(--success); background: var(--success-dim); }
+  .seq-step.upcoming { border-color: #2a3a5a; color: #555; }
 
-  /* Mobile specific */
+  /* ── Mobile ── */
   @media (max-width: 480px) {
     .app { padding: 12px; }
     .modes { grid-template-columns: 1fr; gap: 8px; }
     .answers { grid-template-columns: 1fr; gap: 6px; }
     .game-area { padding: 14px; }
-    .score-bar { font-size: 0.78em; gap: 6px 12px; padding: 8px 10px; }
-    .fret-cell { width: 30px; height: 30px; min-width: 30px; font-size: 0.72em; }
+    .score-bar { font-size: 0.76em; gap: 6px 10px; padding: 8px 10px; }
+    .fret-cell { width: 30px; height: 30px; min-width: 30px; font-size: 0.7em; }
     .fretboard { padding: 8px 4px; }
     .fretboard td { padding: 3px 1px; }
-    .beat { width: 40px; height: 40px; font-size: 0.9em; }
+    .beat { width: 46px; height: 46px; font-size: 0.9em; }
     .answer-btn { padding: 14px 10px; font-size: 0.9em; }
-    .next-btn { padding: 14px 20px; font-size: 0.95em; }
+    .next-btn { padding: 16px 20px; font-size: 0.95em; }
+    .diff-selector { gap: 6px; }
+    .diff-btn { padding: 10px 6px; font-size: 0.78em; }
   }
 
-  /* Tablet-ish */
   @media (min-width: 481px) and (max-width: 768px) {
-    .modes { grid-template-columns: 1fr 1fr; }
     .fret-cell { width: 32px; height: 32px; min-width: 32px; }
   }
 
-  /* Desktop hover states - only on non-touch */
   @media (hover: hover) {
-    .fret-cell:hover { background: #2a3a5a; color: #aaa; }
+    .fret-cell:hover { background: rgba(74, 158, 255, 0.1); color: #aaa; }
     .answer-btn:hover { border-color: #4a6fa5; background: #1e2f52; }
     .next-btn:hover { background: #3a8eef; }
+    .mode-btn:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .mode-btn:hover::before { opacity: 1; }
   }
 </style>
 </head>
 <body>
 <div class="app" id="app"></div>
+<div id="toast-container"></div>
 
 <script>
 // ===== THE GRID SYSTEM DATA =====
-
 const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const STRINGS = ['E','A','D','G'];
 const STRING_OFFSETS = [0, 5, 10, 15];
 const MAX_FRET = 12;
+const MARKER_FRETS = [3, 5, 7, 9];
+const DOUBLE_MARKER_FRETS = [12];
 
 const MAPS = {
   blues: { name: 'Blues', distances: [0,3,5,6,7,10], css: 'blues' },
@@ -343,28 +585,46 @@ const MAPS = {
 };
 
 const DISTANCE_NAMES = {
-  0: 'Home', 2: 'Second step', 3: 'Dark colour', 4: 'Bright colour',
-  5: 'Foundation', 6: 'Grit', 7: 'Power', 8: 'Bright tension',
-  9: 'Ninth', 10: 'The Seven', 11: 'Leading tone', 12: 'Octave'
+  0:'Home', 2:'Second step', 3:'Dark colour', 4:'Bright colour',
+  5:'Foundation', 6:'Grit', 7:'Power', 8:'Bright tension',
+  9:'Ninth', 10:'The Seven', 11:'Leading tone', 12:'Octave'
 };
 
 const STRONG_DISTANCES = [0, 5, 7];
 
-function noteAt(stringIdx, fret) { return (STRING_OFFSETS[stringIdx] + fret) % 12; }
-function noteName(semitone) { return NOTES[semitone % 12]; }
-function positionLabel(stringIdx, fret) { return STRINGS[stringIdx] + fret; }
-function noteToSemitone(note) { return NOTES.indexOf(note); }
-function distanceFrom(home, stringIdx, fret) { return (noteAt(stringIdx, fret) - home + 12) % 12; }
+const CORE_MOVES = {
+  blues: [
+    { name: 'Blues backbone', distances: [0, 5, 7, 0], desc: 'Home → Foundation → Power → Home' },
+    { name: 'Blues walk-up', distances: [0, 3, 5, 6, 7], desc: 'Home → Dark → Foundation → Grit → Power' },
+    { name: 'Blues turnaround', distances: [7, 10, 12], desc: 'Power → Seven → Octave' }
+  ],
+  rock: [
+    { name: 'Rock backbone', distances: [0, 5, 7, 0], desc: 'Home → Foundation → Power → Home' },
+    { name: 'Rock stepladder', distances: [0, 2, 3, 5, 7], desc: 'Home → Step → Dark → Foundation → Power' },
+    { name: 'Rock drop-back', distances: [7, 8, 10, 12], desc: 'Power → Bright → Seven → Octave' }
+  ]
+};
 
-function findPositions(homeSemitone, distance) {
-  const positions = [];
+// Common root notes for Easy difficulty
+const EASY_NOTES = ['C','D','E','F','G','A','B'];
+const ALL_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+// ===== HELPERS =====
+function noteAt(s, f) { const raw = (STRING_OFFSETS[s] + f) % 12; return raw < 0 ? raw + 12 : raw; }
+function noteName(sem) { return NOTES[sem % 12]; }
+function posLabel(s, f) { return STRINGS[s] + f; }
+function noteToSem(n) { return NOTES.indexOf(n); }
+function distFrom(home, s, f) { return (noteAt(s, f) - home + 12) % 12; }
+
+function findPositions(homeSem, dist) {
+  const pos = [];
   for (let s = 0; s < 4; s++)
     for (let f = 0; f <= MAX_FRET; f++)
-      if (distanceFrom(homeSemitone, s, f) === distance) positions.push({ string: s, fret: f });
-  return positions;
+      if (distFrom(homeSem, s, f) === dist) pos.push({ string: s, fret: f });
+  return pos;
 }
 
-function randomChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -374,67 +634,127 @@ function shuffle(arr) {
   return a;
 }
 
-// ===== APP STATE =====
-
+// ===== STATE =====
 const state = {
-  mode: null, score: 0, total: 0, streak: 0, bestStreak: 0,
-  question: null, answered: false, feedback: null, feedbackType: 'info',
-  jamChord: null, jamGenre: null, jamBeats: [null,null,null,null],
-  jamCurrentBeat: 0, jamAnswered: false, selectedCells: []
+  mode: null,
+  difficulty: 'normal', // easy, normal, hard
+  score: 0, total: 0, streak: 0, bestStreak: 0,
+  question: null, answered: false,
+  feedback: null, feedbackType: 'info',
+  selectedAnswer: null, selectedCells: [],
+  // Jam
+  jamChord: null, jamGenre: null, jamHomeSem: null,
+  jamMap: null, jamBeats: [null,null,null,null],
+  jamCurrentBeat: 0, jamAnswered: false, jamFeedback: null,
+  // Core Moves
+  moveSequence: null, moveCurrentStep: 0, moveDone: false
 };
+
+function resetState() {
+  state.answered = false;
+  state.feedback = null;
+  state.feedbackType = 'info';
+  state.selectedCells = [];
+  state.selectedAnswer = null;
+  state.jamChord = null;
+  state.jamGenre = null;
+  state.jamHomeSem = null;
+  state.jamMap = null;
+  state.jamBeats = [null,null,null,null];
+  state.jamCurrentBeat = 0;
+  state.jamAnswered = false;
+  state.jamFeedback = null;
+  state.moveSequence = null;
+  state.moveCurrentStep = 0;
+  state.moveDone = false;
+  state.question = null;
+}
+
+// ===== STREAK CELEBRATIONS =====
+const STREAK_MILESTONES = { 5: 'On fire!', 10: 'Locked in.', 20: 'Machine mode.', 50: 'Untouchable.' };
+function checkStreak() {
+  const msg = STREAK_MILESTONES[state.streak];
+  if (msg) showToast(msg + ' ' + state.streak + ' streak');
+}
+
+function showToast(text) {
+  const el = document.createElement('div');
+  el.className = 'streak-toast';
+  el.textContent = text;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+// ===== DIFFICULTY HELPERS =====
+function notePool() {
+  if (state.difficulty === 'easy') return EASY_NOTES;
+  return ALL_NOTES;
+}
+
+function distancePool(genre) {
+  const map = MAPS[genre || 'blues'];
+  if (state.difficulty === 'easy') return [0, 5, 7]; // Just the anchors
+  if (state.difficulty === 'hard') return [0,1,2,3,4,5,6,7,8,9,10,11]; // All chromatic
+  return map.distances;
+}
 
 // ===== QUESTION GENERATORS =====
 
-function generateFindHome() {
-  const note = randomChoice(['C','D','E','F','G','A','B','C#','F#','G#','A#','D#']);
-  const semitone = noteToSemitone(note);
-  const positions = findPositions(semitone, 0).filter(p => p.fret <= 12);
+function genFindHome() {
+  const note = rand(notePool());
+  const sem = noteToSem(note);
+  const positions = findPositions(sem, 0).filter(p => p.fret <= 12);
   return {
-    type: 'fretboard_tap',
+    type: 'fretboard_tap', mode: 'find_home',
     question: `Guitarist calls "${note}" — find Home.`,
     context: 'Tap any position where this note lives.',
-    homeSemitone: semitone, correctPositions: positions,
-    targetDistance: 0, showHome: false
+    homeSem: sem, correctPositions: positions,
+    showHome: false, homePos: null
   };
 }
 
-function generateDistance() {
-  const homeNote = randomChoice(['C','D','E','F','G','A','B']);
-  const homeSemitone = noteToSemitone(homeNote);
-  const homePositions = findPositions(homeSemitone, 0).filter(p => p.fret <= 7);
-  const homePos = randomChoice(homePositions);
-  const targetString = Math.floor(Math.random() * 4);
-  const targetFret = Math.floor(Math.random() * 13);
-  const dist = distanceFrom(homeSemitone, targetString, targetFret);
-  const wrongDistances = [];
-  while (wrongDistances.length < 3) {
+function genDistance() {
+  const homeNote = rand(notePool());
+  const homeSem = noteToSem(homeNote);
+  const homePositions = findPositions(homeSem, 0).filter(p => p.fret <= 7);
+  const homePos = rand(homePositions);
+
+  // Ensure target is NOT the home position
+  let targetString, targetFret;
+  do {
+    targetString = Math.floor(Math.random() * 4);
+    targetFret = Math.floor(Math.random() * 13);
+  } while (targetString === homePos.string && targetFret === homePos.fret);
+
+  const dist = distFrom(homeSem, targetString, targetFret);
+  const wrongDists = [];
+  while (wrongDists.length < 3) {
     const d = Math.floor(Math.random() * 12);
-    if (d !== dist && !wrongDistances.includes(d)) wrongDistances.push(d);
+    if (d !== dist && !wrongDists.includes(d)) wrongDists.push(d);
   }
-  const options = shuffle([dist, ...wrongDistances]);
+  const options = shuffle([dist, ...wrongDists]);
   return {
-    type: 'multiple_choice',
-    question: `Home is ${noteName(homeSemitone)} at ${positionLabel(homePos.string, homePos.fret)}. What distance is ${positionLabel(targetString, targetFret)}?`,
+    type: 'multiple_choice', mode: 'distance',
+    question: `Home is ${homeNote} at ${posLabel(homePos.string, homePos.fret)}. What distance is ${posLabel(targetString, targetFret)}?`,
     context: 'Count the semitones from Home to the target.',
-    homeSemitone, homePos, targetPos: { string: targetString, fret: targetFret },
+    homeSem, homePos, targetPos: { string: targetString, fret: targetFret },
     correctAnswer: dist,
     options: options.map(d => ({ label: `${d} — ${DISTANCE_NAMES[d] || 'Distance ' + d}`, value: d }))
   };
 }
 
-function generateMapPicker() {
-  const distance = Math.floor(Math.random() * 11) + 1;
+function genMapPicker() {
+  const bluesOnly = MAPS.blues.distances.filter(d => !MAPS.rock.distances.includes(d) && d !== 0);
+  const rockOnly = MAPS.rock.distances.filter(d => !MAPS.blues.distances.includes(d) && d !== 0);
+  const shared = MAPS.blues.distances.filter(d => MAPS.rock.distances.includes(d) && d !== 0);
 
   if (Math.random() > 0.5) {
-    const bluesOnly = MAPS.blues.distances.filter(d => !MAPS.rock.distances.includes(d) && d !== 0);
-    const rockOnly = MAPS.rock.distances.filter(d => !MAPS.blues.distances.includes(d) && d !== 0);
-    const shared = MAPS.blues.distances.filter(d => MAPS.rock.distances.includes(d) && d !== 0);
     const pool = [...bluesOnly.map(d => ({d, answer: 'blues_only'})),
                   ...rockOnly.map(d => ({d, answer: 'rock_only'})),
                   ...shared.map(d => ({d, answer: 'both'}))];
-    const pick = randomChoice(pool);
+    const pick = rand(pool);
     return {
-      type: 'multiple_choice',
+      type: 'multiple_choice', mode: 'map_picker',
       question: `Distance ${pick.d} (${DISTANCE_NAMES[pick.d] || '?'}) — which map?`,
       context: 'Blues: 0, 3, 5, 6, 7, 10 — Rock: 0, 2, 3, 5, 7, 8, 10',
       correctAnswer: pick.answer,
@@ -445,11 +765,12 @@ function generateMapPicker() {
       ])
     };
   } else {
-    const genre = randomChoice(['blues', 'rock']);
+    const genre = rand(['blues', 'rock']);
     const map = MAPS[genre];
+    const distance = Math.floor(Math.random() * 11) + 1;
     const isInMap = map.distances.includes(distance);
     return {
-      type: 'multiple_choice',
+      type: 'multiple_choice', mode: 'map_picker',
       question: `Playing ${map.name}. Is distance ${distance} (${DISTANCE_NAMES[distance] || '?'}) in your map?`,
       context: `Think about the ${map.name} map distances.`,
       correctAnswer: isInMap ? 'yes' : 'no',
@@ -461,17 +782,19 @@ function generateMapPicker() {
   }
 }
 
-function generateStrongBeat() {
-  const distance = randomChoice([0, 2, 3, 5, 6, 7, 8, 10]);
-  const beat = randomChoice([1, 2, 3, 4]);
+function genStrongBeat() {
+  const distance = rand([0, 2, 3, 5, 6, 7, 8, 10]);
+  const beat = rand([1, 2, 3, 4]);
   const isStrong = (beat === 1 || beat === 3);
   const isStrongDist = STRONG_DISTANCES.includes(distance);
   const isBad = isStrong && !isStrongDist;
+
   return {
-    type: 'multiple_choice',
+    type: 'multiple_choice', mode: 'strong_beat',
     question: `Beat ${beat}, distance ${distance} (${DISTANCE_NAMES[distance]}) — good placement?`,
-    context: 'Strong beats (1 & 3) want Home, Foundation, or Power. Weak beats (2 & 4) take anything.',
+    context: 'Beats 1 & 3 are strong — they want Home (0), Foundation (5), or Power (7). Beats 2 & 4 take anything from the map.',
     correctAnswer: isBad ? 'not_ideal' : 'solid',
+    isBad, isStrong, isStrongDist, distance, beat,
     options: [
       { label: 'Solid — works here', value: 'solid' },
       { label: 'Not ideal — wrong beat', value: 'not_ideal' }
@@ -479,27 +802,70 @@ function generateStrongBeat() {
   };
 }
 
-function generateJam() {
-  const chord = randomChoice(['C','D','E','F','G','A','B']);
-  const genre = randomChoice(['blues', 'rock']);
-  return { chord, genre, homeSemitone: noteToSemitone(chord), map: MAPS[genre] };
+function genFretboardDistance() {
+  const homeNote = rand(notePool());
+  const homeSem = noteToSem(homeNote);
+  const homePositions = findPositions(homeSem, 0).filter(p => p.fret <= 7);
+  const homePos = rand(homePositions);
+  const genre = rand(['blues', 'rock']);
+  const map = MAPS[genre];
+  const targetDist = rand(map.distances.filter(d => d !== 0));
+  const correctPositions = findPositions(homeSem, targetDist).filter(p => p.fret <= 12);
+  return {
+    type: 'fretboard_tap', mode: 'fretboard_distance',
+    question: `Home is ${homeNote} at ${posLabel(homePos.string, homePos.fret)}. Tap distance ${targetDist} (${DISTANCE_NAMES[targetDist]}).`,
+    context: `Playing ${map.name}. Find distance ${targetDist} on the neck.`,
+    homeSem, homePos, correctPositions, targetDistance: targetDist, showHome: true
+  };
 }
 
-function generateFretboardDistance() {
-  const homeNote = randomChoice(['C','D','E','F','G','A','B']);
-  const homeSemitone = noteToSemitone(homeNote);
-  const homePositions = findPositions(homeSemitone, 0).filter(p => p.fret <= 7);
-  const homePos = randomChoice(homePositions);
-  const genre = randomChoice(['blues', 'rock']);
-  const map = MAPS[genre];
-  const targetDist = randomChoice(map.distances.filter(d => d !== 0));
-  const correctPositions = findPositions(homeSemitone, targetDist).filter(p => p.fret <= 12);
+function genWrapping() {
+  const homeNote = rand(notePool());
+  const homeSem = noteToSem(homeNote);
+  const homePositions = findPositions(homeSem, 0).filter(p => p.fret >= 2 && p.fret <= 7);
+  const homePos = rand(homePositions);
+  const targetDist = rand([5, 7, 3, 10]);
+  const allPositions = findPositions(homeSem, targetDist).filter(p => p.fret <= 12);
+  // Only accept positions on a DIFFERENT string than Home
+  const diffStringPositions = allPositions.filter(p => p.string !== homePos.string);
+
   return {
-    type: 'fretboard_tap',
-    question: `Home is ${homeNote} at ${positionLabel(homePos.string, homePos.fret)}. Tap distance ${targetDist} (${DISTANCE_NAMES[targetDist]}).`,
-    context: `Playing ${map.name}. Find distance ${targetDist} on the neck.`,
-    homeSemitone, homePos, correctPositions, targetDistance: targetDist, showHome: true
+    type: 'fretboard_tap', mode: 'wrapping',
+    question: `Home is ${homeNote} at ${posLabel(homePos.string, homePos.fret)}. Find distance ${targetDist} (${DISTANCE_NAMES[targetDist]}) on a DIFFERENT string.`,
+    context: `Crossing up one string adds 5 to the distance. Find where ${DISTANCE_NAMES[targetDist]} wraps to on another string.`,
+    homeSem, homePos, correctPositions: diffStringPositions,
+    allPositions, targetDistance: targetDist, showHome: true
   };
+}
+
+function genCoreMoves() {
+  const genre = rand(['blues', 'rock']);
+  const move = rand(CORE_MOVES[genre]);
+  const homeNote = rand(EASY_NOTES);
+  const homeSem = noteToSem(homeNote);
+  const homePositions = findPositions(homeSem, 0).filter(p => p.fret >= 2 && p.fret <= 7 && p.string <= 1);
+  const homePos = rand(homePositions);
+
+  // For each distance in the sequence, find possible positions
+  const steps = move.distances.map(d => ({
+    distance: d,
+    name: DISTANCE_NAMES[d],
+    positions: findPositions(homeSem, d).filter(p => p.fret <= 12)
+  }));
+
+  return {
+    type: 'sequence', mode: 'core_moves',
+    question: `Play the ${move.name}: ${move.desc}`,
+    context: `Home is ${homeNote} at ${posLabel(homePos.string, homePos.fret)}. Playing ${MAPS[genre].name}. Tap each note in order.`,
+    homeSem, homePos, steps, genre,
+    moveName: move.name
+  };
+}
+
+function genJam() {
+  const chord = rand(EASY_NOTES);
+  const genre = rand(['blues', 'rock']);
+  return { chord, genre, homeSem: noteToSem(chord), map: MAPS[genre] };
 }
 
 // ===== RENDERING =====
@@ -507,84 +873,104 @@ function generateFretboardDistance() {
 function render() {
   const app = document.getElementById('app');
   app.innerHTML = !state.mode ? renderModeSelect() : renderGame();
-  attachEvents();
 }
 
 function renderModeSelect() {
+  const modes = [
+    { id: 'find_home', name: 'Find Home', desc: 'Chord gets called. Find it on the neck.', stars: 1 },
+    { id: 'distance', name: 'Name the Distance', desc: 'Given Home and a target, work out the distance.', stars: 2 },
+    { id: 'map_picker', name: 'Know Your Maps', desc: 'Blues or Rock? Which distances belong where.', stars: 1 },
+    { id: 'strong_beat', name: 'Strong Beats', desc: 'Right distance on the right beat?', stars: 2 },
+    { id: 'wrapping', name: 'Wrapping', desc: 'Find the same distance on a different string.', stars: 3 },
+    { id: 'fretboard_distance', name: 'Fretboard Tap', desc: 'Given a distance, find it on the neck.', stars: 2 },
+    { id: 'core_moves', name: 'Core Moves', desc: 'Play sequences: walk-ups, turnarounds, backbones.', stars: 3 },
+    { id: 'jam', name: 'Jam Simulator', desc: 'Chord gets called. Pick notes for each beat.', stars: 4 }
+  ];
+
   return `
     <h1>The Grid System</h1>
     <p class="subtitle">Bass Theory Trainer</p>
     ${renderScoreBar()}
     <div class="modes">
-      <div class="mode-btn" data-mode="find_home">
-        <h3>Find Home</h3>
-        <p>Chord gets called. Find it on the neck.</p>
-      </div>
-      <div class="mode-btn" data-mode="distance">
-        <h3>Name the Distance</h3>
-        <p>Given Home and a target, work out the distance.</p>
-      </div>
-      <div class="mode-btn" data-mode="map_picker">
-        <h3>Know Your Maps</h3>
-        <p>Blues or Rock? Which distances belong where.</p>
-      </div>
-      <div class="mode-btn" data-mode="strong_beat">
-        <h3>Strong Beats</h3>
-        <p>Right distance on the right beat?</p>
-      </div>
-      <div class="mode-btn" data-mode="jam">
-        <h3>Jam Simulator</h3>
-        <p>Chord gets called. Pick notes for each beat.</p>
-      </div>
-      <div class="mode-btn" data-mode="fretboard_distance">
-        <h3>Fretboard Tap</h3>
-        <p>Given a distance, find it on the neck.</p>
-      </div>
+      ${modes.map((m, i) => `
+        <div class="mode-btn" data-mode="${m.id}" style="animation-delay: ${i * 0.06}s">
+          <h3>${m.name}</h3>
+          <p>${m.desc}</p>
+          <div class="difficulty-stars">${'★'.repeat(m.stars)}${'☆'.repeat(4 - m.stars)}</div>
+        </div>
+      `).join('')}
     </div>
   `;
 }
 
 function renderScoreBar() {
   const pct = state.total > 0 ? Math.round((state.score / state.total) * 100) : 0;
+  const fireEmoji = state.streak >= 5 ? ' 🔥' : state.streak >= 3 ? ' ✨' : '';
   return `
     <div class="score-bar">
       <span>Score: <span class="val">${state.score}/${state.total}</span></span>
       <span>Accuracy: <span class="val">${state.total > 0 ? pct + '%' : '—'}</span></span>
-      <span>Streak: <span class="val streak">${state.streak}${state.streak >= 3 ? ' 🔥' : ''}</span></span>
+      <span>Streak: <span class="val streak-val">${state.streak}<span class="streak-fire">${fireEmoji}</span></span></span>
       <span>Best: <span class="val">${state.bestStreak}</span></span>
     </div>
   `;
 }
 
+const MODE_TITLES = {
+  find_home: 'Find Home', distance: 'Name the Distance', map_picker: 'Know Your Maps',
+  strong_beat: 'Strong Beats', jam: 'Jam Simulator', fretboard_distance: 'Fretboard Tap',
+  wrapping: 'Wrapping', core_moves: 'Core Moves'
+};
+
 function renderGame() {
   let content = '';
   if (state.mode === 'jam') content = renderJamMode();
+  else if (state.mode === 'core_moves') content = renderCoreMoves();
   else if (state.question) {
     content = state.question.type === 'fretboard_tap' ? renderFretboardQuestion() : renderMultipleChoice();
   }
 
-  const titles = {
-    find_home: 'Find Home', distance: 'Name the Distance', map_picker: 'Know Your Maps',
-    strong_beat: 'Strong Beats', jam: 'Jam Simulator', fretboard_distance: 'Fretboard Tap'
-  };
-
   return `
     <div class="game-header">
-      <h1>${titles[state.mode] || ''}</h1>
+      <h1>${MODE_TITLES[state.mode] || ''}</h1>
       <button class="back-btn" data-action="back">← Modes</button>
     </div>
     ${renderScoreBar()}
+    ${renderDiffSelector()}
     <div class="game-area">${content}</div>
   `;
 }
 
-function renderFretboard(options = {}) {
-  const { homeSemitone, homePos, targetPos, showHome, correctPositions, clickable, selectedCells, highlightMap } = options;
+function renderDiffSelector() {
+  const diffs = [
+    { id: 'easy', label: 'Easy' },
+    { id: 'normal', label: 'Normal' },
+    { id: 'hard', label: 'Hard' }
+  ];
+  return `<div class="diff-selector">${diffs.map(d =>
+    `<button class="diff-btn ${state.difficulty === d.id ? 'active' : ''}" data-diff="${d.id}">${d.label}</button>`
+  ).join('')}</div>`;
+}
+
+function renderFretboard(opts = {}) {
+  const { homeSem, homePos, showHome, correctPositions, clickable, selectedCells,
+          highlightMap, homePersistent, sequenceTargets, sequenceDone } = opts;
   const isMobile = window.innerWidth <= 480;
 
-  let html = '<div class="fretboard"><table>';
+  let html = '';
+  if (clickable && isMobile) html += '<p class="scroll-hint">← Swipe to scroll fretboard →</p>';
+  html += '<div class="fretboard"><table>';
+
+  // Fret number row with markers
   html += '<tr><td></td>';
-  for (let f = 0; f <= MAX_FRET; f++) html += `<td class="fret-num">${f}</td>`;
+  for (let f = 0; f <= MAX_FRET; f++) {
+    const isMarker = MARKER_FRETS.includes(f);
+    const isDouble = DOUBLE_MARKER_FRETS.includes(f);
+    let cls = 'fret-num';
+    if (isDouble) cls += ' marker double-marker';
+    else if (isMarker) cls += ' marker';
+    html += `<td class="${cls}">${f}</td>`;
+  }
   html += '</tr>';
 
   for (let s = 0; s < 4; s++) {
@@ -593,23 +979,44 @@ function renderFretboard(options = {}) {
       let cls = 'fret-cell';
       let label = '';
 
+      // Home persistent marker (always visible in some modes)
+      if (homePersistent && homePos && homePos.string === s && homePos.fret === f) {
+        cls += ' home-persistent';
+        label = 'H';
+      }
+
+      // Home marker (strong)
       if (showHome && homePos && homePos.string === s && homePos.fret === f) {
-        cls += ' home-marker'; label = 'H';
+        cls += ' home-marker';
+        label = 'H';
       }
-      if (targetPos && targetPos.string === s && targetPos.fret === f) {
-        cls += ' home-marker'; label = '?';
+
+      // Sequence targets
+      if (sequenceTargets) {
+        const st = sequenceTargets.find(t => t.positions.some(p => p.string === s && p.fret === f));
+        if (st && st.active) { cls += ' sequence-target'; label = label || st.distance; }
       }
+      if (sequenceDone) {
+        const sd = sequenceDone.find(c => c.string === s && c.fret === f);
+        if (sd) { cls += ' sequence-done'; label = '✓'; }
+      }
+
+      // Selected cells (correct/wrong)
       if (selectedCells) {
         const sel = selectedCells.find(c => c.string === s && c.fret === f);
         if (sel) { cls += sel.correct ? ' correct' : ' wrong'; label = sel.correct ? '✓' : '✗'; }
       }
-      if (highlightMap && homeSemitone !== undefined) {
-        const dist = distanceFrom(homeSemitone, s, f);
+
+      // Map highlighting
+      if (highlightMap && homeSem !== undefined) {
+        const dist = distFrom(homeSem, s, f);
         if (highlightMap.includes(dist)) { cls += ' hint'; label = label || dist; }
       }
+
+      // Show correct positions after answering
       if (correctPositions && state.answered) {
-        const isCorrect = correctPositions.find(c => c.string === s && c.fret === f);
-        if (isCorrect && !selectedCells?.find(c => c.string === s && c.fret === f)) {
+        const isCorr = correctPositions.find(c => c.string === s && c.fret === f);
+        if (isCorr && !selectedCells?.find(c => c.string === s && c.fret === f)) {
           cls += ' hint'; label = label || noteName(noteAt(s, f));
         }
       }
@@ -620,7 +1027,6 @@ function renderFretboard(options = {}) {
     html += '</tr>';
   }
   html += '</table></div>';
-  if (clickable && isMobile) html += '<p class="scroll-hint">Swipe to scroll the fretboard →</p>';
   return html;
 }
 
@@ -630,9 +1036,10 @@ function renderFretboardQuestion() {
     <div class="question">${q.question}</div>
     <div class="context">${q.context}</div>
     ${renderFretboard({
-      homeSemitone: q.homeSemitone, homePos: q.homePos, showHome: q.showHome,
+      homeSem: q.homeSem, homePos: q.homePos, showHome: q.showHome,
       correctPositions: state.answered ? q.correctPositions : null,
-      clickable: !state.answered, selectedCells: state.selectedCells, targetPos: q.targetPos
+      clickable: !state.answered, selectedCells: state.selectedCells,
+      homePersistent: q.mode === 'wrapping' || q.mode === 'fretboard_distance'
     })}
   `;
   if (state.feedback) html += `<div class="feedback ${state.feedbackType}">${state.feedback}</div>`;
@@ -642,17 +1049,17 @@ function renderFretboardQuestion() {
 
 function renderMultipleChoice() {
   const q = state.question;
-  let fretboardHtml = '';
+  let fbHtml = '';
   if (q.homePos || q.targetPos) {
-    fretboardHtml = renderFretboard({
-      homeSemitone: q.homeSemitone, homePos: q.homePos, showHome: true,
+    fbHtml = renderFretboard({
+      homeSem: q.homeSem, homePos: q.homePos, showHome: true,
       targetPos: q.targetPos, clickable: false, selectedCells: state.selectedCells
     });
   }
   let html = `
     <div class="question">${q.question}</div>
     <div class="context">${q.context}</div>
-    ${fretboardHtml}
+    ${fbHtml}
     <div class="answers">
   `;
   q.options.forEach(opt => {
@@ -669,13 +1076,64 @@ function renderMultipleChoice() {
   return html;
 }
 
+function renderCoreMoves() {
+  if (!state.moveSequence) {
+    const q = genCoreMoves();
+    state.moveSequence = q;
+    state.moveCurrentStep = 0;
+    state.moveDone = false;
+    state.selectedCells = [];
+  }
+
+  const q = state.moveSequence;
+  const steps = q.steps;
+
+  // Step indicators
+  let stepsHtml = '<div class="sequence-steps">';
+  steps.forEach((step, i) => {
+    let cls = 'seq-step';
+    if (i < state.moveCurrentStep) cls += ' done';
+    else if (i === state.moveCurrentStep && !state.moveDone) cls += ' active';
+    else cls += ' upcoming';
+    stepsHtml += `<span class="${cls}">${step.distance} ${step.name}</span>`;
+  });
+  stepsHtml += '</div>';
+
+  // Build sequence targets for fretboard
+  let seqTargets = null;
+  let seqDone = [];
+  if (!state.moveDone) {
+    const currentStep = steps[state.moveCurrentStep];
+    seqTargets = [{ ...currentStep, active: true }];
+    // Collect already-tapped positions
+    seqDone = state.selectedCells.filter(c => c.correct);
+  }
+
+  const fbHtml = renderFretboard({
+    homeSem: q.homeSem, homePos: q.homePos, showHome: true,
+    clickable: !state.moveDone, selectedCells: state.selectedCells,
+    homePersistent: true, sequenceTargets: seqTargets, sequenceDone: seqDone
+  });
+
+  let html = `
+    <div class="question">${q.question}</div>
+    <div class="context">${q.context}</div>
+    ${stepsHtml}
+    ${fbHtml}
+  `;
+
+  if (state.feedback) html += `<div class="feedback ${state.feedbackType}">${state.feedback}</div>`;
+  if (state.moveDone) html += `<button class="next-btn" data-action="next_move">Next Sequence →</button>`;
+  return html;
+}
+
 function renderJamMode() {
   if (!state.jamChord) {
-    const jam = generateJam();
+    const jam = genJam();
     Object.assign(state, {
-      jamChord: jam.chord, jamGenre: jam.genre, jamHomeSemitone: jam.homeSemitone,
+      jamChord: jam.chord, jamGenre: jam.genre, jamHomeSem: jam.homeSem,
       jamMap: jam.map, jamBeats: [null,null,null,null], jamCurrentBeat: 0,
-      jamAnswered: false, jamFeedback: null
+      jamAnswered: false, jamFeedback: null, selectedCells: []
     });
   }
 
@@ -699,8 +1157,9 @@ function renderJamMode() {
     <p class="context">Beat ${state.jamCurrentBeat + 1} of 4. ${(state.jamCurrentBeat === 0 || state.jamCurrentBeat === 2) ? '⚡ Strong beat — Home, Foundation, or Power.' : 'Weak beat — any map distance.'}</p>
     ${beatsHtml}
     ${renderFretboard({
-      homeSemitone: state.jamHomeSemitone, clickable: !state.jamAnswered,
-      selectedCells: state.selectedCells || [], highlightMap: showHints
+      homeSem: state.jamHomeSem, clickable: !state.jamAnswered,
+      selectedCells: state.selectedCells || [], highlightMap: showHints,
+      homePersistent: true, homePos: findPositions(state.jamHomeSem, 0).filter(p => p.fret <= 7)[0]
     })}
     ${state.jamFeedback ? `<div class="feedback ${state.feedbackType}">${state.jamFeedback}</div>` : ''}
     ${state.jamAnswered ? '<button class="next-btn" data-action="next_jam">Next Chord →</button>' : ''}
@@ -711,72 +1170,121 @@ function renderJamMode() {
 
 function startMode(mode) {
   state.mode = mode;
-  state.answered = false;
-  state.feedback = null;
-  state.selectedCells = [];
-  state.jamChord = null;
+  resetState();
   nextQuestion();
 }
 
 function nextQuestion() {
-  Object.assign(state, { answered: false, feedback: null, feedbackType: 'info', selectedCells: [], selectedAnswer: null });
+  resetState();
 
   const generators = {
-    find_home: generateFindHome, distance: generateDistance,
-    map_picker: generateMapPicker, strong_beat: generateStrongBeat,
-    fretboard_distance: generateFretboardDistance
+    find_home: genFindHome, distance: genDistance,
+    map_picker: genMapPicker, strong_beat: genStrongBeat,
+    fretboard_distance: genFretboardDistance, wrapping: genWrapping
   };
 
-  if (state.mode === 'jam') {
-    state.jamChord = null;
-    state.jamFeedback = null;
-    state.selectedCells = [];
-  } else {
-    state.question = generators[state.mode]();
-  }
+  if (state.mode === 'jam') { /* jam renders its own init */ }
+  else if (state.mode === 'core_moves') { /* core moves renders its own init */ }
+  else { state.question = generators[state.mode](); }
   render();
 }
 
-function handleFretboardTap(stringIdx, fret) {
-  if (state.mode === 'jam') return handleJamTap(stringIdx, fret);
+function handleFretboardTap(s, f) {
+  if (state.mode === 'jam') return handleJamTap(s, f);
+  if (state.mode === 'core_moves') return handleMoveTap(s, f);
+  if (!['find_home', 'fretboard_distance', 'wrapping'].includes(state.mode)) return;
   if (state.answered) return;
 
   const q = state.question;
-  const isCorrect = q.correctPositions.some(p => p.string === stringIdx && p.fret === fret);
+  const isCorrect = q.correctPositions.some(p => p.string === s && p.fret === f);
 
-  state.selectedCells = [{ string: stringIdx, fret: fret, correct: isCorrect }];
+  state.selectedCells = [{ string: s, fret: f, correct: isCorrect }];
   state.answered = true;
   state.total++;
 
   if (isCorrect) {
     state.score++; state.streak++;
     if (state.streak > state.bestStreak) state.bestStreak = state.streak;
-    state.feedback = `Correct. ${positionLabel(stringIdx, fret)} = ${noteName(noteAt(stringIdx, fret))}. Other positions highlighted.`;
+    checkStreak();
     state.feedbackType = 'correct';
+
+    if (state.mode === 'wrapping') {
+      const dist = distFrom(q.homeSem, s, f);
+      state.feedback = `Correct. ${posLabel(s, f)} = ${noteName(noteAt(s, f))}, distance ${dist} from Home. The neck wraps — same distance lives on multiple strings. Other positions highlighted.`;
+    } else if (state.mode === 'find_home') {
+      state.feedback = `Correct. ${posLabel(s, f)} = ${noteName(noteAt(s, f))}. Other Home positions highlighted.`;
+    } else {
+      state.feedback = `Correct. ${posLabel(s, f)} = distance ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Other positions highlighted.`;
+    }
   } else {
     state.streak = 0;
-    state.feedback = `${positionLabel(stringIdx, fret)} is ${noteName(noteAt(stringIdx, fret))}, not what we need. Correct positions highlighted.`;
     state.feedbackType = 'wrong';
+    const tappedNote = noteName(noteAt(s, f));
+    const tappedDist = distFrom(q.homeSem, s, f);
+
+    if (state.mode === 'find_home') {
+      state.feedback = `${posLabel(s, f)} is ${tappedNote}, not ${noteName(q.homeSem)}. Look for ${noteName(q.homeSem)} — correct positions are now highlighted.`;
+    } else if (state.mode === 'wrapping') {
+      state.feedback = `${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance}. Remember: crossing up one string adds 5 to the distance. Correct positions highlighted.`;
+    } else {
+      state.feedback = `${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Correct positions highlighted.`;
+    }
   }
   render();
 }
 
-function handleJamTap(stringIdx, fret) {
-  if (state.jamAnswered) return;
+function handleMoveTap(s, f) {
+  if (state.moveDone) return;
+  const q = state.moveSequence;
+  const step = q.steps[state.moveCurrentStep];
+  const isCorrect = step.positions.some(p => p.string === s && p.fret === f);
 
-  const dist = distanceFrom(state.jamHomeSemitone, stringIdx, fret);
+  if (isCorrect) {
+    state.selectedCells = [...state.selectedCells, { string: s, fret: f, correct: true }];
+    state.moveCurrentStep++;
+
+    if (state.moveCurrentStep >= q.steps.length) {
+      // Completed the whole sequence
+      state.moveDone = true;
+      state.total++;
+      state.score++;
+      state.streak++;
+      if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+      checkStreak();
+      state.feedbackType = 'correct';
+      state.feedback = `Nailed it. ${q.moveName} complete. That pattern works from any Home position — same shape, different fret.`;
+    }
+  } else {
+    state.selectedCells = [...state.selectedCells, { string: s, fret: f, correct: false }];
+    state.moveDone = true;
+    state.total++;
+    state.streak = 0;
+    state.feedbackType = 'wrong';
+    const expectedDist = step.distance;
+    const tappedDist = distFrom(q.homeSem, s, f);
+    state.feedback = `${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}). The next note in the sequence was distance ${expectedDist} (${DISTANCE_NAMES[expectedDist]}). Try to feel the shape — ${q.moveName} is a physical pattern that stays the same wherever Home is.`;
+  }
+  render();
+}
+
+function handleJamTap(s, f) {
+  if (state.jamAnswered) return;
+  if (state.jamCurrentBeat >= 4) return;
+
+  const dist = distFrom(state.jamHomeSem, s, f);
   const inMap = state.jamMap.distances.includes(dist);
   const isStrongBeat = (state.jamCurrentBeat === 0 || state.jamCurrentBeat === 2);
   const isStrongDist = STRONG_DISTANCES.includes(dist);
 
-  state.selectedCells = [...(state.selectedCells || []), { string: stringIdx, fret: fret, correct: inMap }];
+  state.selectedCells = [...(state.selectedCells || []), { string: s, fret: f, correct: inMap }];
   state.jamBeats[state.jamCurrentBeat] = {
-    distance: dist, position: positionLabel(stringIdx, fret),
+    distance: dist, position: posLabel(s, f),
     inMap, goodPlacement: inMap && (!isStrongBeat || isStrongDist)
   };
 
   if (state.jamCurrentBeat < 3) { state.jamCurrentBeat++; render(); return; }
 
+  // Evaluate full bar
   state.jamAnswered = true;
   state.total++;
 
@@ -787,7 +1295,8 @@ function handleJamTap(stringIdx, fret) {
     const strong = (i === 0 || i === 2);
     let v = '';
     if (!b.inMap) v = `dist ${b.distance} not in ${state.jamMap.name} map`;
-    else if (strong && !STRONG_DISTANCES.includes(b.distance)) v = `${DISTANCE_NAMES[b.distance]} on strong beat — works but not ideal`;
+    else if (strong && !STRONG_DISTANCES.includes(b.distance))
+      v = `${DISTANCE_NAMES[b.distance]} on a strong beat — works but not ideal`;
     else v = `${DISTANCE_NAMES[b.distance] || 'dist ' + b.distance} — solid`;
     return `Beat ${i+1}: ${v}`;
   });
@@ -795,13 +1304,14 @@ function handleJamTap(stringIdx, fret) {
   if (allInMap && strongBeatsGood) {
     state.score++; state.streak++;
     if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    checkStreak();
     state.feedbackType = 'correct';
     state.jamFeedback = `Strong bar. All in map, anchors on strong beats. ${parts.join('. ')}.`;
   } else if (allInMap) {
-    state.score++; state.streak++;
-    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
-    state.feedbackType = 'correct';
-    state.jamFeedback = `All in the map — good. Try stronger distances on beats 1 and 3. ${parts.join('. ')}.`;
+    // All in map but weak distances on strong beats — partial credit via feedback, no score
+    state.streak = 0;
+    state.feedbackType = 'info';
+    state.jamFeedback = `All notes in the ${state.jamMap.name} map, but your strong beats (1 and 3) want Home, Foundation, or Power. ${parts.join('. ')}.`;
   } else {
     state.streak = 0;
     state.feedbackType = 'wrong';
@@ -822,11 +1332,19 @@ function handleAnswer(value) {
   if (isCorrect) {
     state.score++; state.streak++;
     if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    checkStreak();
     state.feedbackType = 'correct';
+
     if (state.mode === 'distance') {
       state.feedback = `Correct. ${DISTANCE_NAMES[q.correctAnswer]} — ${q.correctAnswer} semitones from Home.`;
     } else if (state.mode === 'strong_beat') {
-      state.feedback = q.correctAnswer === 'solid' ? 'Right. That placement works.' : 'Right. Strong beats want anchors (0, 5, 7).';
+      if (q.correctAnswer === 'solid') {
+        state.feedback = q.isStrong
+          ? `Right. ${DISTANCE_NAMES[q.distance]} is an anchor distance — perfect for beat ${q.beat}.`
+          : `Right. Beat ${q.beat} is a weak beat — any map distance works here, including ${DISTANCE_NAMES[q.distance]}.`;
+      } else {
+        state.feedback = `Right. Beat ${q.beat} is a strong beat — it wants Home (0), Foundation (5), or Power (7), not ${DISTANCE_NAMES[q.distance]}.`;
+      }
     } else {
       state.feedback = 'Correct.';
     }
@@ -834,43 +1352,67 @@ function handleAnswer(value) {
     state.streak = 0;
     state.feedbackType = 'wrong';
     const correctOpt = q.options.find(o => String(o.value) === String(q.correctAnswer));
-    state.feedback = `Not quite. Answer: ${correctOpt ? correctOpt.label : q.correctAnswer}.`;
+
     if (state.mode === 'distance') {
-      state.feedback += ` ${positionLabel(q.targetPos.string, q.targetPos.fret)} is ${q.correctAnswer} semitones from ${noteName(q.homeSemitone)}.`;
+      state.feedback = `Not quite. ${posLabel(q.targetPos.string, q.targetPos.fret)} is ${q.correctAnswer} semitones from ${noteName(q.homeSem)} — that's ${DISTANCE_NAMES[q.correctAnswer]}. Count the frets from Home to the target (wrapping across strings adds 5 per string).`;
+    } else if (state.mode === 'strong_beat') {
+      if (q.isBad) {
+        state.feedback = `Beat ${q.beat} is a strong beat. ${DISTANCE_NAMES[q.distance]} (distance ${q.distance}) creates tension — strong beats want the anchors: Home (0), Foundation (5), or Power (7).`;
+      } else {
+        state.feedback = q.isStrong
+          ? `That placement is solid. ${DISTANCE_NAMES[q.distance]} is an anchor distance, which is exactly what beat ${q.beat} wants.`
+          : `Beat ${q.beat} is a weak beat — any map distance is fine here. ${DISTANCE_NAMES[q.distance]} works.`;
+      }
+    } else {
+      state.feedback = `Not quite. Answer: ${correctOpt ? correctOpt.label : q.correctAnswer}.`;
     }
   }
   render();
 }
 
-// ===== EVENT HANDLING =====
+// ===== EVENT DELEGATION =====
+// Single event listener on app container — no duplication issues
+document.getElementById('app').addEventListener('click', (e) => {
+  const target = e.target;
 
-function attachEvents() {
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => startMode(btn.dataset.mode));
-  });
-  document.querySelectorAll('[data-action="back"]').forEach(btn => {
-    btn.addEventListener('click', () => { state.mode = null; state.question = null; render(); });
-  });
-  document.querySelectorAll('[data-action="next"]').forEach(btn => {
-    btn.addEventListener('click', () => nextQuestion());
-  });
-  document.querySelectorAll('[data-action="next_jam"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      Object.assign(state, { jamChord: null, jamFeedback: null, selectedCells: [], jamCurrentBeat: 0, jamAnswered: false });
-      render();
-    });
-  });
-  document.querySelectorAll('[data-clickable="true"]').forEach(cell => {
-    cell.addEventListener('click', () => handleFretboardTap(parseInt(cell.dataset.string), parseInt(cell.dataset.fret)));
-  });
-  document.querySelectorAll('.answer-btn').forEach(btn => {
-    if (!btn.disabled) btn.addEventListener('click', () => handleAnswer(btn.dataset.answer));
-  });
-}
+  // Mode buttons (check target or parent)
+  const modeBtn = target.closest('[data-mode]');
+  if (modeBtn) return startMode(modeBtn.dataset.mode);
+
+  // Back button
+  if (target.closest('[data-action="back"]')) { state.mode = null; resetState(); render(); return; }
+
+  // Next buttons
+  if (target.closest('[data-action="next"]')) return nextQuestion();
+  if (target.closest('[data-action="next_jam"]')) {
+    Object.assign(state, { jamChord: null, jamFeedback: null, selectedCells: [], jamCurrentBeat: 0, jamAnswered: false });
+    render(); return;
+  }
+  if (target.closest('[data-action="next_move"]')) {
+    state.moveSequence = null; state.moveCurrentStep = 0; state.moveDone = false;
+    state.selectedCells = []; state.feedback = null;
+    render(); return;
+  }
+
+  // Difficulty buttons
+  const diffBtn = target.closest('[data-diff]');
+  if (diffBtn) {
+    state.difficulty = diffBtn.dataset.diff;
+    nextQuestion();
+    return;
+  }
+
+  // Fretboard clicks
+  const fretCell = target.closest('[data-clickable="true"]');
+  if (fretCell) return handleFretboardTap(parseInt(fretCell.dataset.string), parseInt(fretCell.dataset.fret));
+
+  // Answer buttons
+  const ansBtn = target.closest('.answer-btn');
+  if (ansBtn && !ansBtn.disabled) return handleAnswer(ansBtn.dataset.answer);
+});
 
 // ===== INIT =====
 render();
-window.addEventListener('resize', () => { /* fretboard scroll hint updates on re-render */ });
 </script>
 </body>
 </html>
