@@ -1002,10 +1002,32 @@ function renderModeSelect() {
     { id: 'jam', name: 'Jam Simulator', desc: 'Chord gets called. Pick notes for each beat.', stars: 4 }
   ];
 
+  // Session summary if any questions answered
+  let summaryHtml = '';
+  if (state.total > 0) {
+    const pct = Math.round((state.score / state.total) * 100);
+    const spots = srs.getWeakSpots(3);
+    const acc = adaptive.getAccuracy();
+    const suggestion = acc >= 0.85 ? 'You\'re cruising. Try a harder mode or bump difficulty.' :
+                       acc >= 0.6 ? 'Solid session. Keep drilling your weak spots.' :
+                       'Slow down and focus on the basics. Easy mode is fine.';
+    summaryHtml = `
+      <div style="padding:12px 14px;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:0.82em;line-height:1.6">
+        <div style="color:var(--text-primary);font-weight:600;margin-bottom:6px">Session: ${state.score}/${state.total} (${pct}%) · Best streak: ${state.bestStreak}</div>
+        <div style="color:var(--text-secondary);margin-bottom:4px">${suggestion}</div>
+        ${spots.length > 0 ? `<div style="color:var(--text-tertiary);margin-top:6px">Drill these: ${spots.map(s => {
+          const label = s.key.replace('home:', '').replace('dist:', 'Dist ').replace('tap:', 'Tap ').replace('wrap:', 'Wrap ');
+          return `<span style="color:var(--error)">${label}</span> (${s.pct}%)`;
+        }).join(', ')}</div>` : ''}
+      </div>
+    `;
+  }
+
   return `
     <h1>The Grid System</h1>
     <p class="subtitle">Bass Theory Trainer</p>
     ${renderScoreBar()}
+    ${summaryHtml}
     <div class="modes">
       ${modes.map((m, i) => `
         <button class="mode-btn" data-mode="${m.id}" style="animation-delay: ${i * 0.06}s${m.id === 'mixed' ? ';grid-column:1/-1;border-color:var(--accent)' : ''}" aria-label="${m.name}: ${m.desc}">
@@ -1050,12 +1072,19 @@ function renderGame() {
 
   const displayMode = state.mode === 'mixed' ? 'Mixed Practice' : (MODE_TITLES[state.mode] || '');
   const subMode = state.mode === 'mixed' && state.question ? ` <span style="font-size:0.6em;color:var(--text-tertiary);font-weight:400">${MODE_TITLES[state.question.mode] || ''}</span>` : '';
+
+  // Scaffolding hint for first encounter
+  const hintMode = state.mode === 'mixed' ? 'mixed' : state.mode;
+  const hint = scaffolding.getHint(hintMode);
+  const hintHtml = hint ? `<div style="padding:10px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:0.8em;color:var(--text-secondary);line-height:1.5">${hint}</div>` : '';
+
   return `
     <div class="game-header">
       <h1>${displayMode}${subMode}</h1>
       <button class="back-btn" data-action="back">← Modes</button>
     </div>
     ${renderScoreBar()}
+    ${hintHtml}
     ${state.mode !== 'mixed' ? renderDiffSelector() : ''}
     <div class="game-area">${content}</div>
     ${state.total > 0 ? renderWeakSpots() : ''}
@@ -1345,11 +1374,53 @@ function renderJamMode() {
   `;
 }
 
+// ===== SCAFFOLDING =====
+// First-time hints per mode, shown once then dismissed
+const scaffolding = {
+  seen: {},
+  hints: {
+    find_home: 'Each note appears in multiple places on the neck. The same note repeats every 12 frets, and crossing up one string shifts 5 semitones. Start with the E and A strings — most bass lines root there.',
+    distance: 'You\'ll see Home and a target marked on the fretboard. Count the semitones between them. Same string = count frets. Different string = add 5 per string crossed, then count frets.',
+    map_picker: 'Blues map: 0, 3, 5, 6, 7, 10. Rock map: 0, 2, 3, 5, 7, 8, 10. They share 0, 3, 5, 7, 10. The unique ones give each genre its character — 6 (Grit) is blues, 2 and 8 are rock.',
+    strong_beat: 'Beats 1 and 3 are strong — they carry the rhythm. Your ear expects stability there: Home (0), Foundation (5), or Power (7). Beats 2 and 4 are weak — any map distance works for colour.',
+    wrapping: 'Crossing up one string (E→A, A→D, D→G) adds 5 to the distance. So distance 7 on the E string becomes distance 2 on the A string (7 - 5 = 2). Same note, different position.',
+    fretboard_distance: 'You know the distance name — now find where it lives on the neck. Remember: same distance appears in multiple places. The shape stays the same regardless of where Home is.',
+    core_moves: 'These are the bread-and-butter patterns. The shape of each move is identical no matter where Home is — learn the physical pattern once and it works everywhere.',
+    jam: 'A chord is called, a genre is set. You have 4 beats to fill. Strong beats (1 and 3) want Home, Foundation, or Power. Weak beats (2 and 4) take any map distance. Think ahead.',
+    mixed: 'Mixed practice feels harder than drilling one thing — that\'s the point. Research shows interleaving different skills produces 2x better retention than blocked practice. Trust the process.'
+  },
+  getHint(mode) {
+    if (this.seen[mode]) return null;
+    this.seen[mode] = true;
+    return this.hints[mode] || null;
+  }
+};
+
+// ===== SPATIAL REASONING TIPS =====
+// Contextual explanations for WHY an answer is correct/wrong
+function spatialTip(homeSem, homePos, targetS, targetF) {
+  const targetDist = distFrom(homeSem, targetS, targetF);
+  const sameString = homePos && homePos.string === targetS;
+  const stringDiff = homePos ? targetS - homePos.string : 0;
+  const fretDiff = homePos ? targetF - homePos.fret : 0;
+
+  if (sameString) {
+    return `Same string, ${Math.abs(fretDiff)} fret${Math.abs(fretDiff) !== 1 ? 's' : ''} ${fretDiff >= 0 ? 'up' : 'down'} = distance ${targetDist}.`;
+  }
+  if (stringDiff !== 0 && homePos) {
+    const stringsUp = Math.abs(stringDiff);
+    const added = stringsUp * 5;
+    return `${stringsUp} string${stringsUp > 1 ? 's' : ''} ${stringDiff > 0 ? 'up' : 'down'} adds ${added}, plus ${Math.abs(fretDiff)} fret${Math.abs(fretDiff) !== 1 ? 's' : ''} = distance ${targetDist}.`;
+  }
+  return '';
+}
+
 // ===== GAME LOGIC =====
 
 function startMode(mode) {
   state.mode = mode;
   resetState();
+  state.mixedIndex = 0;
   nextQuestion();
 }
 
@@ -1405,26 +1476,28 @@ function handleFretboardTap(s, f) {
     checkStreak();
     state.feedbackType = 'correct';
 
+    const tip = q.homePos ? spatialTip(q.homeSem, q.homePos, s, f) : '';
     if (q.mode === 'wrapping') {
       const dist = distFrom(q.homeSem, s, f);
-      state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = ${noteName(noteAt(s, f))}, distance ${dist} from Home. Same distance lives on multiple strings. Other positions highlighted.`;
+      state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = distance ${dist}. ${tip} Other positions highlighted.`;
     } else if (q.mode === 'find_home') {
       state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = ${noteName(noteAt(s, f))}. Other Home positions highlighted.`;
     } else {
-      state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = distance ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Other positions highlighted.`;
+      state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = distance ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). ${tip}`;
     }
   } else {
     state.streak = 0;
     state.feedbackType = 'wrong';
     const tappedNote = noteName(noteAt(s, f));
     const tappedDist = distFrom(q.homeSem, s, f);
+    const tip = q.homePos ? spatialTip(q.homeSem, q.homePos, s, f) : '';
 
     if (q.mode === 'find_home') {
-      state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is ${tappedNote}, not ${noteName(q.homeSem)}. Correct positions now highlighted.`;
+      state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is ${tappedNote}, not ${noteName(q.homeSem)}. Correct positions highlighted.`;
     } else if (q.mode === 'wrapping') {
-      state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance}. Remember: crossing up one string adds 5. Correct positions highlighted.`;
+      state.feedback = `${randFeedback(WRONG_OPENERS)} That's distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance}. ${tip} Correct positions highlighted.`;
     } else {
-      state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Correct positions highlighted.`;
+      state.feedback = `${randFeedback(WRONG_OPENERS)} That's distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance}. ${tip}`;
     }
   }
   render();
