@@ -632,6 +632,115 @@ function shuffle(arr) {
   return a;
 }
 
+// ===== SPACED REPETITION ENGINE =====
+// Tracks per-item difficulty using a simplified SM-2 algorithm
+// Items that are missed get a lower "ease" and appear more often
+const srs = {
+  items: {}, // key -> { ease: 2.5, interval: 1, due: 0, correct: 0, wrong: 0 }
+  sessionHistory: [], // { mode, key, correct, timestamp }
+
+  getItem(key) {
+    if (!this.items[key]) this.items[key] = { ease: 2.5, interval: 1, due: 0, correct: 0, wrong: 0 };
+    return this.items[key];
+  },
+
+  record(key, correct) {
+    const item = this.getItem(key);
+    const now = Date.now();
+    if (correct) {
+      item.correct++;
+      item.ease = Math.max(1.3, item.ease + 0.1);
+      item.interval = Math.min(item.interval * item.ease, 50);
+    } else {
+      item.wrong++;
+      item.ease = Math.max(1.3, item.ease - 0.3);
+      item.interval = 1;
+    }
+    item.due = now + (item.interval * 60000); // interval in minutes for session
+    this.sessionHistory.push({ key, correct, timestamp: now });
+  },
+
+  // Pick from pool, weighted towards items that are due or weak
+  weightedPick(pool, keyFn) {
+    if (pool.length === 0) return null;
+    const now = Date.now();
+    const weights = pool.map(item => {
+      const key = keyFn(item);
+      const srsItem = this.items[key];
+      if (!srsItem) return 3; // unseen items get medium priority
+      if (now >= srsItem.due) return 5; // due items get high priority
+      if (srsItem.wrong > srsItem.correct) return 4; // weak items
+      return 1; // strong items get low priority
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < pool.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return pool[i];
+    }
+    return pool[pool.length - 1];
+  },
+
+  // Get weak spots for session summary
+  getWeakSpots(limit = 5) {
+    return Object.entries(this.items)
+      .filter(([_, v]) => v.wrong > 0)
+      .sort((a, b) => (b[1].wrong / Math.max(1, b[1].correct + b[1].wrong)) - (a[1].wrong / Math.max(1, a[1].correct + a[1].wrong)))
+      .slice(0, limit)
+      .map(([key, v]) => ({ key, correct: v.correct, wrong: v.wrong, pct: Math.round(v.correct / Math.max(1, v.correct + v.wrong) * 100) }));
+  },
+
+  save() {
+    try { localStorage.setItem('gridSRS', JSON.stringify(this.items)); } catch(e) {}
+  },
+  load() {
+    try {
+      const d = localStorage.getItem('gridSRS');
+      if (d) this.items = JSON.parse(d);
+    } catch(e) {}
+  }
+};
+
+// ===== ADAPTIVE DIFFICULTY =====
+// Auto-adjusts based on rolling accuracy over last N questions
+const adaptive = {
+  window: 10,
+  history: [],
+
+  record(correct) {
+    this.history.push(correct);
+    if (this.history.length > this.window * 3) this.history = this.history.slice(-this.window * 2);
+  },
+
+  getAccuracy() {
+    const recent = this.history.slice(-this.window);
+    if (recent.length < 3) return 0.5; // not enough data
+    return recent.filter(x => x).length / recent.length;
+  },
+
+  shouldPromote() { return this.history.length >= this.window && this.getAccuracy() >= 0.85; },
+  shouldDemote() { return this.history.length >= 5 && this.getAccuracy() <= 0.35; },
+
+  // Auto-adjust difficulty in state
+  adjust() {
+    if (this.shouldPromote() && state.difficulty !== 'hard') {
+      const levels = ['easy', 'normal', 'hard'];
+      const idx = levels.indexOf(state.difficulty);
+      if (idx < 2) {
+        state.difficulty = levels[idx + 1];
+        showToast('Difficulty up: ' + state.difficulty);
+      }
+    } else if (this.shouldDemote() && state.difficulty !== 'easy') {
+      const levels = ['easy', 'normal', 'hard'];
+      const idx = levels.indexOf(state.difficulty);
+      if (idx > 0) {
+        state.difficulty = levels[idx - 1];
+        showToast('Easing off: ' + state.difficulty);
+      }
+    }
+  }
+};
+
 // ===== STATE =====
 const state = {
   mode: null,
@@ -645,7 +754,10 @@ const state = {
   jamMap: null, jamBeats: [null,null,null,null],
   jamCurrentBeat: 0, jamAnswered: false, jamFeedback: null,
   // Core Moves
-  moveSequence: null, moveCurrentStep: 0, moveDone: false
+  moveSequence: null, moveCurrentStep: 0, moveDone: false,
+  // Mixed Practice
+  mixedModes: ['find_home', 'fretboard_distance', 'wrapping', 'strong_beat', 'map_picker'],
+  mixedIndex: 0
 };
 
 function resetState() {
@@ -704,7 +816,8 @@ function distancePool(genre) {
 // ===== QUESTION GENERATORS =====
 
 function genFindHome() {
-  const note = rand(notePool());
+  const pool = notePool();
+  const note = srs.weightedPick(pool, n => `home:${n}`) || rand(pool);
   const sem = noteToSem(note);
   const positions = findPositions(sem, 0).filter(p => p.fret <= 12);
   return {
@@ -712,7 +825,8 @@ function genFindHome() {
     question: `Guitarist calls "${note}" — find Home.`,
     context: 'Tap any position where this note lives.',
     homeSem: sem, correctPositions: positions,
-    showHome: false, homePos: null
+    showHome: false, homePos: null,
+    srsKey: `home:${note}`
   };
 }
 
@@ -722,27 +836,21 @@ function genDistance() {
   const homePositions = findPositions(homeSem, 0).filter(p => p.fret <= 7);
   const homePos = rand(homePositions);
 
-  // Ensure target is NOT the home position
-  let targetString, targetFret;
-  do {
-    targetString = Math.floor(Math.random() * 4);
-    targetFret = Math.floor(Math.random() * 13);
-  } while (targetString === homePos.string && targetFret === homePos.fret);
+  // Use SRS to pick a target distance weighted towards weak spots
+  const pool = distancePool();
+  const targetDist = srs.weightedPick(pool.filter(d => d !== 0), d => `dist:${d}`) || rand(pool.filter(d => d !== 0));
 
-  const dist = distFrom(homeSem, targetString, targetFret);
-  const wrongDists = [];
-  while (wrongDists.length < 3) {
-    const d = Math.floor(Math.random() * 12);
-    if (d !== dist && !wrongDists.includes(d)) wrongDists.push(d);
-  }
-  const options = shuffle([dist, ...wrongDists]);
+  // Find a position at that distance
+  const targetPositions = findPositions(homeSem, targetDist).filter(p => p.fret <= 12);
+  const targetPos = rand(targetPositions);
+
   return {
-    type: 'multiple_choice', mode: 'distance',
-    question: `Home is ${homeNote} at ${posLabel(homePos.string, homePos.fret)}. What distance is ${posLabel(targetString, targetFret)}?`,
-    context: 'Count the semitones from Home to the target.',
-    homeSem, homePos, targetPos: { string: targetString, fret: targetFret },
-    correctAnswer: dist,
-    options: options.map(d => ({ label: `${d} — ${DISTANCE_NAMES[d] || 'Distance ' + d}`, value: d }))
+    type: 'distance_recall', mode: 'distance',
+    question: `Home is ${homeNote} at ${posLabel(homePos.string, homePos.fret)}. What distance is the highlighted position?`,
+    context: 'Count semitones from Home to the target. Tap the distance number.',
+    homeSem, homePos, targetPos: { string: targetPos.string, fret: targetPos.fret },
+    correctAnswer: targetDist,
+    srsKey: `dist:${targetDist}`
   };
 }
 
@@ -812,13 +920,15 @@ function genFretboardDistance() {
   const homePos = rand(homePositions);
   const genre = rand(['blues', 'rock']);
   const map = MAPS[genre];
-  const targetDist = rand(map.distances.filter(d => d !== 0));
+  const distPool = map.distances.filter(d => d !== 0);
+  const targetDist = srs.weightedPick(distPool, d => `tap:${d}`) || rand(distPool);
   const correctPositions = findPositions(homeSem, targetDist).filter(p => p.fret <= 12);
   return {
     type: 'fretboard_tap', mode: 'fretboard_distance',
     question: `Home is ${homeNote} at ${posLabel(homePos.string, homePos.fret)}. Tap distance ${targetDist} (${DISTANCE_NAMES[targetDist]}).`,
     context: `Playing ${map.name}. Find distance ${targetDist} on the neck.`,
-    homeSem, homePos, correctPositions, targetDistance: targetDist, showHome: true
+    homeSem, homePos, correctPositions, targetDistance: targetDist, showHome: true,
+    srsKey: `tap:${targetDist}`
   };
 }
 
@@ -837,7 +947,8 @@ function genWrapping() {
     question: `Home is ${homeNote} at ${posLabel(homePos.string, homePos.fret)}. Find distance ${targetDist} (${DISTANCE_NAMES[targetDist]}) on a DIFFERENT string.`,
     context: `Crossing up one string adds 5 to the distance. Find where ${DISTANCE_NAMES[targetDist]} wraps to on another string.`,
     homeSem, homePos, correctPositions: diffStringPositions,
-    allPositions, targetDistance: targetDist, showHome: true
+    allPositions, targetDistance: targetDist, showHome: true,
+    srsKey: `wrap:${targetDist}`
   };
 }
 
@@ -880,8 +991,9 @@ function render() {
 
 function renderModeSelect() {
   const modes = [
+    { id: 'mixed', name: 'Mixed Practice', desc: 'Interleaved drills. Best way to learn. Start here.', stars: 2 },
     { id: 'find_home', name: 'Find Home', desc: 'Chord gets called. Find it on the neck.', stars: 1 },
-    { id: 'distance', name: 'Name the Distance', desc: 'Given Home and a target, work out the distance.', stars: 2 },
+    { id: 'distance', name: 'Name the Distance', desc: 'Home and a target on the fretboard. Tap the distance.', stars: 2 },
     { id: 'map_picker', name: 'Know Your Maps', desc: 'Blues or Rock? Which distances belong where.', stars: 1 },
     { id: 'strong_beat', name: 'Strong Beats', desc: 'Right distance on the right beat?', stars: 2 },
     { id: 'wrapping', name: 'Wrapping', desc: 'Find the same distance on a different string.', stars: 3 },
@@ -896,7 +1008,7 @@ function renderModeSelect() {
     ${renderScoreBar()}
     <div class="modes">
       ${modes.map((m, i) => `
-        <button class="mode-btn" data-mode="${m.id}" style="animation-delay: ${i * 0.06}s" aria-label="${m.name}: ${m.desc}">
+        <button class="mode-btn" data-mode="${m.id}" style="animation-delay: ${i * 0.06}s${m.id === 'mixed' ? ';grid-column:1/-1;border-color:var(--accent)' : ''}" aria-label="${m.name}: ${m.desc}">
           <h3>${m.name}</h3>
           <p>${m.desc}</p>
           <div class="difficulty-stars" aria-label="Difficulty ${m.stars} of 4">${'★'.repeat(m.stars)}${'☆'.repeat(4 - m.stars)}</div>
@@ -922,25 +1034,31 @@ function renderScoreBar() {
 const MODE_TITLES = {
   find_home: 'Find Home', distance: 'Name the Distance', map_picker: 'Know Your Maps',
   strong_beat: 'Strong Beats', jam: 'Jam Simulator', fretboard_distance: 'Fretboard Tap',
-  wrapping: 'Wrapping', core_moves: 'Core Moves'
+  wrapping: 'Wrapping', core_moves: 'Core Moves', mixed: 'Mixed Practice'
 };
 
 function renderGame() {
   let content = '';
-  if (state.mode === 'jam') content = renderJamMode();
-  else if (state.mode === 'core_moves') content = renderCoreMoves();
+  const actualMode = state.mode === 'mixed' ? (state.question?.mode || state.mode) : state.mode;
+  if (actualMode === 'jam') content = renderJamMode();
+  else if (actualMode === 'core_moves') content = renderCoreMoves();
   else if (state.question) {
-    content = state.question.type === 'fretboard_tap' ? renderFretboardQuestion() : renderMultipleChoice();
+    if (state.question.type === 'fretboard_tap') content = renderFretboardQuestion();
+    else if (state.question.type === 'distance_recall') content = renderDistanceRecall();
+    else content = renderMultipleChoice();
   }
 
+  const displayMode = state.mode === 'mixed' ? 'Mixed Practice' : (MODE_TITLES[state.mode] || '');
+  const subMode = state.mode === 'mixed' && state.question ? ` <span style="font-size:0.6em;color:var(--text-tertiary);font-weight:400">${MODE_TITLES[state.question.mode] || ''}</span>` : '';
   return `
     <div class="game-header">
-      <h1>${MODE_TITLES[state.mode] || ''}</h1>
+      <h1>${displayMode}${subMode}</h1>
       <button class="back-btn" data-action="back">← Modes</button>
     </div>
     ${renderScoreBar()}
-    ${renderDiffSelector()}
+    ${state.mode !== 'mixed' ? renderDiffSelector() : ''}
     <div class="game-area">${content}</div>
+    ${state.total > 0 ? renderWeakSpots() : ''}
   `;
 }
 
@@ -957,7 +1075,7 @@ function renderDiffSelector() {
 
 function renderFretboard(opts = {}) {
   const { homeSem, homePos, showHome, correctPositions, clickable, selectedCells,
-          highlightMap, homePersistent, sequenceTargets, sequenceDone } = opts;
+          highlightMap, homePersistent, sequenceTargets, sequenceDone, targetHighlight } = opts;
   const isMobile = window.innerWidth <= 480;
 
   let html = '';
@@ -981,6 +1099,12 @@ function renderFretboard(opts = {}) {
     for (let f = 0; f <= MAX_FRET; f++) {
       let cls = 'fret-cell';
       let label = '';
+
+      // Target highlight (distance recall mode)
+      if (targetHighlight && targetHighlight.string === s && targetHighlight.fret === f) {
+        cls += ' sequence-target';
+        label = '?';
+      }
 
       // Home persistent marker (always visible in some modes)
       if (homePersistent && homePos && homePos.string === s && homePos.fret === f) {
@@ -1082,6 +1206,53 @@ function renderMultipleChoice() {
   if (state.feedback) html += `<div class="feedback ${state.feedbackType}" role="status" aria-live="polite">${state.feedback}</div>`;
   if (state.answered) html += `<button class="next-btn" data-action="next">Next →</button>`;
   return html;
+}
+
+function renderDistanceRecall() {
+  const q = state.question;
+  const fbHtml = renderFretboard({
+    homeSem: q.homeSem, homePos: q.homePos, showHome: true,
+    clickable: false, selectedCells: state.selectedCells,
+    homePersistent: true, targetHighlight: q.targetPos
+  });
+
+  // Distance grid: 12 buttons (0-11) for the player to recall from memory
+  const pool = state.difficulty === 'easy' ? [0,5,7] : (state.difficulty === 'hard' ? [0,1,2,3,4,5,6,7,8,9,10,11] : [0,2,3,5,6,7,8,10]);
+  let gridHtml = '<div class="answers" style="grid-template-columns: repeat(4, 1fr);">';
+  for (let d = 0; d < 12; d++) {
+    let cls = 'answer-btn';
+    const name = DISTANCE_NAMES[d] || d;
+    if (state.answered) {
+      if (d === q.correctAnswer) cls += ' correct';
+      else if (d === parseInt(state.selectedAnswer)) cls += ' wrong';
+    }
+    gridHtml += `<button class="${cls}" data-answer="${d}" ${state.answered ? 'disabled' : ''} style="padding:10px 4px;font-size:0.75em">${d}<br><span style="font-size:0.8em;opacity:0.7">${name}</span></button>`;
+  }
+  gridHtml += '</div>';
+
+  let html = `
+    <div class="question">${q.question}</div>
+    <div class="context">${q.context}</div>
+    ${fbHtml}
+    ${gridHtml}
+  `;
+  if (state.feedback) html += `<div class="feedback ${state.feedbackType}" role="status" aria-live="polite">${state.feedback}</div>`;
+  if (state.answered) html += `<button class="next-btn" data-action="next">Next →</button>`;
+  return html;
+}
+
+function renderWeakSpots() {
+  const spots = srs.getWeakSpots(4);
+  if (spots.length === 0) return '';
+  return `
+    <div style="margin-top:16px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);font-size:0.78em">
+      <div style="color:var(--text-tertiary);margin-bottom:6px;font-weight:600">Weak spots this session</div>
+      ${spots.map(s => {
+        const label = s.key.replace('home:', '').replace('dist:', 'Distance ').replace('tap:', 'Tap dist ').replace('wrap:', 'Wrap ').replace('map:', '');
+        return `<span style="display:inline-block;padding:3px 8px;margin:2px;border:1px solid var(--border);border-radius:3px;color:var(--error)">${label} <span style="color:var(--text-tertiary)">${s.pct}%</span></span>`;
+      }).join('')}
+    </div>
+  `;
 }
 
 function renderCoreMoves() {
@@ -1191,16 +1362,29 @@ function nextQuestion() {
     fretboard_distance: genFretboardDistance, wrapping: genWrapping
   };
 
-  if (state.mode === 'jam') { /* jam renders its own init */ }
+  if (state.mode === 'mixed') {
+    // Interleaved practice: cycle through modes, weighted by SRS
+    const mixedGens = ['find_home', 'fretboard_distance', 'distance', 'wrapping', 'strong_beat', 'map_picker'];
+    const pick = mixedGens[state.mixedIndex % mixedGens.length];
+    state.mixedIndex++;
+    // Add some randomness: 30% chance to skip ahead for variety
+    if (Math.random() < 0.3) state.mixedIndex++;
+    state.question = generators[pick]();
+  } else if (state.mode === 'jam') { /* jam renders its own init */ }
   else if (state.mode === 'core_moves') { /* core moves renders its own init */ }
   else { state.question = generators[state.mode](); }
+
+  // Adaptive difficulty check every 5 questions
+  if (state.total > 0 && state.total % 5 === 0) adaptive.adjust();
+
   render();
 }
 
 function handleFretboardTap(s, f) {
   if (state.mode === 'jam') return handleJamTap(s, f);
   if (state.mode === 'core_moves') return handleMoveTap(s, f);
-  if (!['find_home', 'fretboard_distance', 'wrapping'].includes(state.mode)) return;
+  const qMode = state.question?.mode || state.mode;
+  if (!['find_home', 'fretboard_distance', 'wrapping'].includes(qMode)) return;
   if (state.answered) return;
 
   const q = state.question;
@@ -1210,16 +1394,21 @@ function handleFretboardTap(s, f) {
   state.answered = true;
   state.total++;
 
+  // Record in SRS and adaptive
+  const srsKey = q.srsKey || `${q.mode}:${q.homeSem || ''}`;
+  srs.record(srsKey, isCorrect);
+  adaptive.record(isCorrect);
+
   if (isCorrect) {
     state.score++; state.streak++;
     if (state.streak > state.bestStreak) state.bestStreak = state.streak;
     checkStreak();
     state.feedbackType = 'correct';
 
-    if (state.mode === 'wrapping') {
+    if (q.mode === 'wrapping') {
       const dist = distFrom(q.homeSem, s, f);
       state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = ${noteName(noteAt(s, f))}, distance ${dist} from Home. Same distance lives on multiple strings. Other positions highlighted.`;
-    } else if (state.mode === 'find_home') {
+    } else if (q.mode === 'find_home') {
       state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = ${noteName(noteAt(s, f))}. Other Home positions highlighted.`;
     } else {
       state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = distance ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Other positions highlighted.`;
@@ -1230,9 +1419,9 @@ function handleFretboardTap(s, f) {
     const tappedNote = noteName(noteAt(s, f));
     const tappedDist = distFrom(q.homeSem, s, f);
 
-    if (state.mode === 'find_home') {
+    if (q.mode === 'find_home') {
       state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is ${tappedNote}, not ${noteName(q.homeSem)}. Correct positions now highlighted.`;
-    } else if (state.mode === 'wrapping') {
+    } else if (q.mode === 'wrapping') {
       state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance}. Remember: crossing up one string adds 5. Correct positions highlighted.`;
     } else {
       state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Correct positions highlighted.`;
@@ -1332,10 +1521,16 @@ function handleAnswer(value) {
   if (state.answered) return;
   const q = state.question;
   const isCorrect = String(value) === String(q.correctAnswer);
+  const qMode = q.mode || state.mode;
 
   state.answered = true;
   state.selectedAnswer = value;
   state.total++;
+
+  // SRS + adaptive tracking
+  const srsKey = q.srsKey || `${qMode}:${q.correctAnswer}`;
+  srs.record(srsKey, isCorrect);
+  adaptive.record(isCorrect);
 
   if (isCorrect) {
     state.score++; state.streak++;
@@ -1344,9 +1539,9 @@ function handleAnswer(value) {
     state.feedbackType = 'correct';
 
     const opener = randFeedback(CORRECT_OPENERS);
-    if (state.mode === 'distance') {
+    if (qMode === 'distance') {
       state.feedback = `${opener} ${DISTANCE_NAMES[q.correctAnswer]} — ${q.correctAnswer} semitones from Home.`;
-    } else if (state.mode === 'strong_beat') {
+    } else if (qMode === 'strong_beat') {
       if (q.correctAnswer === 'solid') {
         state.feedback = q.isStrong
           ? `${opener} ${DISTANCE_NAMES[q.distance]} is an anchor — perfect for beat ${q.beat}.`
@@ -1360,12 +1555,12 @@ function handleAnswer(value) {
   } else {
     state.streak = 0;
     state.feedbackType = 'wrong';
-    const correctOpt = q.options.find(o => String(o.value) === String(q.correctAnswer));
+    const correctOpt = q.options ? q.options.find(o => String(o.value) === String(q.correctAnswer)) : null;
 
     const wrongOpener = randFeedback(WRONG_OPENERS);
-    if (state.mode === 'distance') {
-      state.feedback = `${wrongOpener} ${posLabel(q.targetPos.string, q.targetPos.fret)} is ${q.correctAnswer} semitones from ${noteName(q.homeSem)} — that's ${DISTANCE_NAMES[q.correctAnswer]}. Count frets from Home (wrapping across strings adds 5).`;
-    } else if (state.mode === 'strong_beat') {
+    if (qMode === 'distance') {
+      state.feedback = `${wrongOpener} That's distance ${q.correctAnswer} — ${DISTANCE_NAMES[q.correctAnswer]}. Count frets from Home (crossing strings adds 5).`;
+    } else if (qMode === 'strong_beat') {
       if (q.isBad) {
         state.feedback = `${wrongOpener} Beat ${q.beat} is strong. ${DISTANCE_NAMES[q.distance]} (distance ${q.distance}) creates tension — strong beats want Home (0), Foundation (5), or Power (7).`;
       } else {
