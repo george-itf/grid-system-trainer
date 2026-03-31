@@ -10,17 +10,17 @@
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   :root {
-    --bg-base: #1a1a2e;
-    --bg-elevated: #16213e;
-    --bg-surface: #0d1117;
-    --bg-card: linear-gradient(135deg, #16213e 0%, #0f1927 100%);
+    --bg-base: #1a1a1a;
+    --bg-elevated: #242424;
+    --bg-surface: #111;
+    --bg-card: #1e1e1e;
 
     --text-primary: #fff;
-    --text-secondary: #a0a0b0;
-    --text-tertiary: #6a6a7a;
+    --text-secondary: #b8b8c8;
+    --text-tertiary: #8a8a9a;
 
-    --accent: #4a9eff;
-    --accent-dim: rgba(74, 158, 255, 0.15);
+    --accent: #5a9fd4;
+    --accent-dim: rgba(90, 159, 212, 0.12);
     --success: #2ecc71;
     --success-dim: rgba(46, 204, 113, 0.15);
     --error: #e74c3c;
@@ -41,9 +41,9 @@
     --radius-md: 10px;
     --radius-lg: 14px;
 
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.45);
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
 
     --font-mono: 'Courier New', Monaco, monospace;
   }
@@ -90,11 +90,11 @@
     margin-bottom: 20px;
     padding: 10px 14px;
     background: var(--bg-elevated);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     font-size: 0.82em;
-    box-shadow: var(--shadow-sm);
+    border: 1px solid #333;
   }
-  .score-bar span { color: #aaa; white-space: nowrap; }
+  .score-bar span { color: #bbb; white-space: nowrap; }
   .score-bar .val { color: var(--text-primary); font-weight: 600; }
   .streak-val { color: var(--warning) !important; }
   .streak-fire { display: inline; }
@@ -109,30 +109,19 @@
 
   .mode-btn {
     background: var(--bg-card);
-    border: 2px solid #2a3a5a;
-    border-radius: var(--radius-md);
+    border: 1px solid #333;
+    border-radius: var(--radius-sm);
     padding: 14px;
     cursor: pointer;
     text-align: left;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: border-color 0.15s;
     user-select: none;
-    box-shadow: var(--shadow-sm);
-    position: relative;
-    overflow: hidden;
     opacity: 0;
-    animation: mode-fade-up 0.5s ease-out forwards;
+    animation: mode-fade-up 0.3s ease-out forwards;
+    font-family: inherit;
   }
-  .mode-btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, rgba(74, 158, 255, 0.08) 0%, transparent 100%);
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-  }
-  .mode-btn:active { transform: scale(0.97); border-color: var(--accent); }
-  .mode-btn:active::before { opacity: 1; }
+  .mode-btn:active { border-color: var(--accent); }
+  .mode-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .mode-btn h3 { color: var(--text-primary); font-size: 0.95em; margin-bottom: 4px; font-weight: 600; }
   .mode-btn p { color: var(--text-secondary); font-size: 0.73em; line-height: 1.4; }
   .mode-btn .difficulty-stars { font-size: 0.65em; color: var(--warning); margin-top: 6px; letter-spacing: 1px; }
@@ -145,17 +134,10 @@
   /* ── Game Area ── */
   .game-area {
     background: var(--bg-card);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-sm);
     padding: 20px;
     min-height: 200px;
-    box-shadow: var(--shadow-md);
-    border: 1px solid rgba(74, 158, 255, 0.08);
-    animation: game-area-fade 0.35s ease-out;
-  }
-
-  @keyframes game-area-fade {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    border: 1px solid #333;
   }
 
   .game-header {
@@ -192,32 +174,33 @@
     flex: 1;
     padding: 8px 10px;
     border-radius: var(--radius-sm);
-    border: 2px solid #2a3a5a;
+    border: 1px solid #444;
     background: transparent;
     color: var(--text-secondary);
     font-size: 0.8em;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: border-color 0.15s;
     text-align: center;
     user-select: none;
   }
   .diff-btn.active {
     border-color: var(--accent);
     color: var(--accent);
-    background: var(--accent-dim);
+    background: rgba(90, 159, 212, 0.08);
   }
   .diff-btn:active { transform: scale(0.96); }
+  .diff-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ── Fretboard ── */
   .fretboard {
     background: var(--bg-surface);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     padding: 10px 6px;
     margin-bottom: 16px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+    border: 1px solid #2a2a2a;
     position: relative;
   }
 
@@ -228,18 +211,20 @@
     margin-bottom: 6px;
   }
 
-  .fretboard table { border-collapse: collapse; }
+  .fretboard table { border-collapse: collapse; width: 100%; }
+  .fretboard tr.string-row:nth-child(odd) { background: rgba(255, 255, 255, 0.02); }
+  .fretboard tr.string-row:nth-child(even) { background: rgba(0, 0, 0, 0.1); }
 
   .fretboard td {
     text-align: center;
     padding: 4px 2px;
     font-size: 0.7em;
-    color: #555;
+    color: #888;
     position: relative;
   }
 
   .fretboard .string-label {
-    color: #999;
+    color: #b0b0c0;
     font-weight: 700;
     width: 24px;
     min-width: 24px;
@@ -252,20 +237,20 @@
   }
 
   .fretboard .fret-num {
-    color: #777;
+    color: #999;
     font-size: 0.7em;
     padding: 2px;
     font-family: var(--font-mono);
   }
   /* Fret marker dots */
-  .fretboard .fret-num.marker { color: var(--accent); font-weight: 700; }
+  .fretboard .fret-num.marker { color: #bbb; font-weight: 700; }
   .fretboard .fret-num.marker::after {
     content: '';
     display: block;
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: rgba(74, 158, 255, 0.35);
+    background: rgba(255, 255, 255, 0.2);
     margin: 2px auto 0;
   }
   .fretboard .fret-num.double-marker::after {
@@ -277,9 +262,11 @@
   .fret-cell {
     cursor: pointer;
     border-radius: 50%;
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    font-family: inherit;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -287,33 +274,33 @@
     font-weight: 600;
     font-size: 0.78em;
     user-select: none;
-    border: 2px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
   }
+  .fret-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .fret-cell:active { transform: scale(0.88); }
   .fret-cell.home-marker {
-    background: var(--accent-dim);
+    background: rgba(90, 159, 212, 0.1);
     color: var(--accent);
     border-color: var(--accent);
     font-weight: 700;
   }
   .fret-cell.home-persistent {
-    background: rgba(74, 158, 255, 0.08);
-    border: 2px dashed rgba(74, 158, 255, 0.3);
-    color: rgba(74, 158, 255, 0.5);
+    background: rgba(90, 159, 212, 0.05);
+    border: 1px dashed rgba(90, 159, 212, 0.3);
+    color: rgba(90, 159, 212, 0.5);
     font-weight: 700;
   }
   .fret-cell.correct {
-    background: var(--success-dim);
+    background: rgba(46, 204, 113, 0.1);
     color: var(--success);
     border-color: var(--success);
-    animation: correct-pulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .fret-cell.wrong {
-    background: var(--error-dim);
+    background: rgba(231, 76, 60, 0.1);
     color: var(--error);
     border-color: var(--error);
-    animation: wrong-shake 0.4s ease-in-out;
   }
   .fret-cell.hint {
     background: var(--hint-dim);
@@ -333,9 +320,9 @@
   }
 
   @keyframes correct-pulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.5); }
-    50% { transform: scale(1.15); box-shadow: 0 0 16px 4px rgba(46, 204, 113, 0.3); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
   }
   @keyframes wrong-shake {
     0%, 100% { transform: translateX(0); }
@@ -358,30 +345,28 @@
   }
 
   .answer-btn {
-    background: #1a2744;
-    border: 2px solid #2a3a5a;
-    border-radius: var(--radius-md);
+    background: #222;
+    border: 1px solid #444;
+    border-radius: var(--radius-sm);
     padding: 14px 10px;
     color: #e0e0e0;
     font-size: 0.88em;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: border-color 0.15s;
     text-align: center;
     user-select: none;
   }
   .answer-btn:active { transform: scale(0.97); }
   .answer-btn.correct {
     border-color: var(--success);
-    background: var(--success-dim);
+    background: rgba(46, 204, 113, 0.08);
     color: var(--success);
-    animation: correct-pulse 0.5s ease-out;
   }
   .answer-btn.wrong {
     border-color: var(--error);
-    background: var(--error-dim);
+    background: rgba(231, 76, 60, 0.08);
     color: var(--error);
-    animation: wrong-shake 0.4s ease-in-out;
   }
   .answer-btn:disabled { cursor: default; opacity: 0.7; }
   .answer-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -420,17 +405,18 @@
     justify-content: center;
     font-weight: 700;
     font-size: 1em;
-    border: 2px solid #2a3a5a;
-    background: #1a2744;
-    color: #888;
+    border: 1px solid #444;
+    background: #222;
+    color: #a0a0b0;
     flex-shrink: 0;
     transition: all 0.2s;
     font-family: var(--font-mono);
   }
-  .beat.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(74, 158, 255, 0.2); }
+  .beat:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .beat.active { border-color: var(--accent); color: var(--accent); }
   .beat.filled { border-color: var(--success); color: var(--success); background: var(--success-dim); animation: beat-fill 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .beat.strong { border-color: var(--warning); }
-  .beat.strong.active { border-color: var(--warning); color: var(--warning); box-shadow: 0 0 12px rgba(240, 165, 0, 0.2); }
+  .beat.strong.active { border-color: var(--warning); color: var(--warning); }
 
   @keyframes beat-fill {
     from { transform: scale(0.85); }
@@ -439,17 +425,16 @@
 
   /* ── Feedback ── */
   .feedback {
-    padding: 14px 16px;
-    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
     margin-top: 14px;
     font-size: 0.85em;
     line-height: 1.6;
     font-weight: 500;
-    animation: feedback-slide 0.3s ease-out;
   }
-  .feedback.correct { background: var(--success-dim); color: var(--success); border: 1px solid rgba(46, 204, 113, 0.2); }
-  .feedback.wrong { background: var(--error-dim); color: #e0a0a0; border: 1px solid rgba(231, 76, 60, 0.2); }
-  .feedback.info { background: var(--accent-dim); color: #aac; border: 1px solid rgba(74, 158, 255, 0.2); }
+  .feedback.correct { background: rgba(46, 204, 113, 0.08); color: var(--success); border: 1px solid #333; }
+  .feedback.wrong { background: rgba(231, 76, 60, 0.08); color: #e0a0a0; border: 1px solid #333; }
+  .feedback.info { background: rgba(90, 159, 212, 0.08); color: #aab8cc; border: 1px solid #333; }
 
   @keyframes feedback-slide {
     from { opacity: 0; transform: translateY(-6px); }
@@ -462,15 +447,15 @@
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
-    color: #fff;
+    background: #333;
+    color: var(--warning);
     padding: 10px 24px;
-    border-radius: 30px;
+    border-radius: 4px;
     font-weight: 700;
     font-size: 0.95em;
     z-index: 100;
     animation: toast-pop 2s ease-out forwards;
-    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.4);
+    border: 1px solid var(--warning);
     pointer-events: none;
   }
   @keyframes toast-pop {
@@ -483,9 +468,9 @@
 
   /* ── Buttons ── */
   .next-btn {
-    background: var(--accent);
-    border: none;
-    border-radius: var(--radius-md);
+    background: #333;
+    border: 1px solid #555;
+    border-radius: var(--radius-sm);
     padding: 14px 24px;
     color: #fff;
     font-size: 0.92em;
@@ -494,15 +479,14 @@
     margin-top: 14px;
     width: 100%;
     user-select: none;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.15s;
+    transition: border-color 0.15s;
   }
-  .next-btn:active { transform: scale(0.98); background: #3a8edf; }
+  .next-btn:active { background: #444; }
   .next-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .back-btn {
-    background: #2a3a5a;
-    border: none;
+    background: #2a2a2a;
+    border: 1px solid #444;
     border-radius: var(--radius-sm);
     padding: 8px 14px;
     color: #ccc;
@@ -514,6 +498,7 @@
     transition: all 0.15s;
   }
   .back-btn:active { transform: scale(0.96); }
+  .back-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ── Sequence steps (Core Moves mode) ── */
   .sequence-steps {
@@ -527,14 +512,14 @@
     border-radius: 20px;
     font-size: 0.8em;
     font-weight: 600;
-    border: 2px solid #2a3a5a;
-    background: #1a2744;
-    color: #888;
+    border: 1px solid #444;
+    background: #222;
+    color: #a0a0b0;
     font-family: var(--font-mono);
   }
-  .seq-step.active { border-color: #8e44ad; color: #bb8fce; background: rgba(155, 89, 182, 0.15); }
+  .seq-step.active { border-color: #8e44ad; color: #d0a8e8; background: rgba(155, 89, 182, 0.1); }
   .seq-step.done { border-color: var(--success); color: var(--success); background: var(--success-dim); }
-  .seq-step.upcoming { border-color: #2a3a5a; color: #555; }
+  .seq-step.upcoming { border-color: #333; color: #888; }
 
   /* ── Mobile ── */
   @media (max-width: 480px) {
@@ -543,31 +528,43 @@
     .answers { grid-template-columns: 1fr; gap: 6px; }
     .game-area { padding: 14px; }
     .score-bar { font-size: 0.76em; gap: 6px 10px; padding: 8px 10px; }
-    .fret-cell { width: 30px; height: 30px; min-width: 30px; font-size: 0.7em; }
+    .fret-cell { width: 34px; height: 34px; min-width: 34px; font-size: 0.7em; }
     .fretboard { padding: 8px 4px; }
     .fretboard td { padding: 3px 1px; }
     .beat { width: 46px; height: 46px; font-size: 0.9em; }
     .answer-btn { padding: 14px 10px; font-size: 0.9em; }
     .next-btn { padding: 16px 20px; font-size: 0.95em; }
     .diff-selector { gap: 6px; }
-    .diff-btn { padding: 10px 6px; font-size: 0.78em; }
+    .diff-btn { padding: 10px 6px; font-size: 0.78em; min-height: 44px; }
+    .back-btn { min-height: 44px; padding: 10px 14px; }
   }
 
   @media (min-width: 481px) and (max-width: 768px) {
     .fret-cell { width: 32px; height: 32px; min-width: 32px; }
   }
 
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .mode-btn { opacity: 1; }
+  }
+
   @media (hover: hover) {
-    .fret-cell:hover { background: rgba(74, 158, 255, 0.1); color: #aaa; }
-    .answer-btn:hover { border-color: #4a6fa5; background: #1e2f52; }
-    .next-btn:hover { background: #3a8eef; }
-    .mode-btn:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    .mode-btn:hover::before { opacity: 1; }
+    .fret-cell:hover { background: rgba(255, 255, 255, 0.06); color: #ccc; }
+    .answer-btn:hover { border-color: #666; }
+    .next-btn:hover { background: #3a3a3a; border-color: #666; }
+    .mode-btn:hover { border-color: #666; }
+    .diff-btn:hover { border-color: #666; }
+    .back-btn:hover { border-color: #666; }
   }
 </style>
 </head>
 <body>
-<div class="app" id="app"></div>
+<main class="app" id="app" role="main" aria-label="Grid System Bass Trainer"></main>
 <div id="toast-container"></div>
 
 <script>
@@ -669,6 +666,11 @@ function resetState() {
   state.moveDone = false;
   state.question = null;
 }
+
+// ===== VARIED FEEDBACK =====
+const CORRECT_OPENERS = ['Nice.', 'Got it.', 'Spot on.', 'Yes.', 'Clean.', 'Right.', 'Solid.', 'Nailed it.'];
+const WRONG_OPENERS = ['Not quite.', 'Close.', 'Nope.', 'Off target.', 'Miss.'];
+function randFeedback(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 // ===== STREAK CELEBRATIONS =====
 const STREAK_MILESTONES = { 5: 'On fire!', 10: 'Locked in.', 20: 'Machine mode.', 50: 'Untouchable.' };
@@ -893,11 +895,11 @@ function renderModeSelect() {
     ${renderScoreBar()}
     <div class="modes">
       ${modes.map((m, i) => `
-        <div class="mode-btn" data-mode="${m.id}" style="animation-delay: ${i * 0.06}s">
+        <button class="mode-btn" data-mode="${m.id}" style="animation-delay: ${i * 0.06}s" aria-label="${m.name}: ${m.desc}">
           <h3>${m.name}</h3>
           <p>${m.desc}</p>
-          <div class="difficulty-stars">${'★'.repeat(m.stars)}${'☆'.repeat(4 - m.stars)}</div>
-        </div>
+          <div class="difficulty-stars" aria-label="Difficulty ${m.stars} of 4">${'★'.repeat(m.stars)}${'☆'.repeat(4 - m.stars)}</div>
+        </button>
       `).join('')}
     </div>
   `;
@@ -974,7 +976,7 @@ function renderFretboard(opts = {}) {
   html += '</tr>';
 
   for (let s = 0; s < 4; s++) {
-    html += `<tr><td class="string-label">${STRINGS[s]}</td>`;
+    html += `<tr class="string-row"><td class="string-label">${STRINGS[s]}</td>`;
     for (let f = 0; f <= MAX_FRET; f++) {
       let cls = 'fret-cell';
       let label = '';
@@ -1021,8 +1023,13 @@ function renderFretboard(opts = {}) {
         }
       }
 
-      const clickAttr = clickable ? `data-string="${s}" data-fret="${f}" data-clickable="true"` : '';
-      html += `<td><span class="${cls}" ${clickAttr}>${label}</span></td>`;
+      const note = noteName(noteAt(s, f));
+      const ariaLabel = `${STRINGS[s]} string, fret ${f}, note ${note}`;
+      if (clickable) {
+        html += `<td><button type="button" class="${cls}" data-string="${s}" data-fret="${f}" data-clickable="true" aria-label="${ariaLabel}">${label}</button></td>`;
+      } else {
+        html += `<td><span class="${cls}" aria-label="${ariaLabel}">${label}</span></td>`;
+      }
     }
     html += '</tr>';
   }
@@ -1042,7 +1049,7 @@ function renderFretboardQuestion() {
       homePersistent: q.mode === 'wrapping' || q.mode === 'fretboard_distance'
     })}
   `;
-  if (state.feedback) html += `<div class="feedback ${state.feedbackType}">${state.feedback}</div>`;
+  if (state.feedback) html += `<div class="feedback ${state.feedbackType}" role="status" aria-live="polite">${state.feedback}</div>`;
   if (state.answered) html += `<button class="next-btn" data-action="next">Next →</button>`;
   return html;
 }
@@ -1071,7 +1078,7 @@ function renderMultipleChoice() {
     html += `<button class="${cls}" data-answer="${opt.value}" ${state.answered ? 'disabled' : ''}>${opt.label}</button>`;
   });
   html += '</div>';
-  if (state.feedback) html += `<div class="feedback ${state.feedbackType}">${state.feedback}</div>`;
+  if (state.feedback) html += `<div class="feedback ${state.feedbackType}" role="status" aria-live="polite">${state.feedback}</div>`;
   if (state.answered) html += `<button class="next-btn" data-action="next">Next →</button>`;
   return html;
 }
@@ -1122,7 +1129,7 @@ function renderCoreMoves() {
     ${fbHtml}
   `;
 
-  if (state.feedback) html += `<div class="feedback ${state.feedbackType}">${state.feedback}</div>`;
+  if (state.feedback) html += `<div class="feedback ${state.feedbackType}" role="status" aria-live="polite">${state.feedback}</div>`;
   if (state.moveDone) html += `<button class="next-btn" data-action="next_move">Next Sequence →</button>`;
   return html;
 }
@@ -1161,7 +1168,7 @@ function renderJamMode() {
       selectedCells: state.selectedCells || [], highlightMap: showHints,
       homePersistent: true, homePos: findPositions(state.jamHomeSem, 0).filter(p => p.fret <= 7)[0]
     })}
-    ${state.jamFeedback ? `<div class="feedback ${state.feedbackType}">${state.jamFeedback}</div>` : ''}
+    ${state.jamFeedback ? `<div class="feedback ${state.feedbackType}" role="status" aria-live="polite">${state.jamFeedback}</div>` : ''}
     ${state.jamAnswered ? '<button class="next-btn" data-action="next_jam">Next Chord →</button>' : ''}
   `;
 }
@@ -1210,11 +1217,11 @@ function handleFretboardTap(s, f) {
 
     if (state.mode === 'wrapping') {
       const dist = distFrom(q.homeSem, s, f);
-      state.feedback = `Correct. ${posLabel(s, f)} = ${noteName(noteAt(s, f))}, distance ${dist} from Home. The neck wraps — same distance lives on multiple strings. Other positions highlighted.`;
+      state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = ${noteName(noteAt(s, f))}, distance ${dist} from Home. Same distance lives on multiple strings. Other positions highlighted.`;
     } else if (state.mode === 'find_home') {
-      state.feedback = `Correct. ${posLabel(s, f)} = ${noteName(noteAt(s, f))}. Other Home positions highlighted.`;
+      state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = ${noteName(noteAt(s, f))}. Other Home positions highlighted.`;
     } else {
-      state.feedback = `Correct. ${posLabel(s, f)} = distance ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Other positions highlighted.`;
+      state.feedback = `${randFeedback(CORRECT_OPENERS)} ${posLabel(s, f)} = distance ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Other positions highlighted.`;
     }
   } else {
     state.streak = 0;
@@ -1223,11 +1230,11 @@ function handleFretboardTap(s, f) {
     const tappedDist = distFrom(q.homeSem, s, f);
 
     if (state.mode === 'find_home') {
-      state.feedback = `${posLabel(s, f)} is ${tappedNote}, not ${noteName(q.homeSem)}. Look for ${noteName(q.homeSem)} — correct positions are now highlighted.`;
+      state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is ${tappedNote}, not ${noteName(q.homeSem)}. Correct positions now highlighted.`;
     } else if (state.mode === 'wrapping') {
-      state.feedback = `${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance}. Remember: crossing up one string adds 5 to the distance. Correct positions highlighted.`;
+      state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance}. Remember: crossing up one string adds 5. Correct positions highlighted.`;
     } else {
-      state.feedback = `${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Correct positions highlighted.`;
+      state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}), not ${q.targetDistance} (${DISTANCE_NAMES[q.targetDistance]}). Correct positions highlighted.`;
     }
   }
   render();
@@ -1252,7 +1259,7 @@ function handleMoveTap(s, f) {
       if (state.streak > state.bestStreak) state.bestStreak = state.streak;
       checkStreak();
       state.feedbackType = 'correct';
-      state.feedback = `Nailed it. ${q.moveName} complete. That pattern works from any Home position — same shape, different fret.`;
+      state.feedback = `${randFeedback(CORRECT_OPENERS)} ${q.moveName} complete. That pattern works from any Home — same shape, different fret.`;
     }
   } else {
     state.selectedCells = [...state.selectedCells, { string: s, fret: f, correct: false }];
@@ -1262,7 +1269,7 @@ function handleMoveTap(s, f) {
     state.feedbackType = 'wrong';
     const expectedDist = step.distance;
     const tappedDist = distFrom(q.homeSem, s, f);
-    state.feedback = `${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}). The next note in the sequence was distance ${expectedDist} (${DISTANCE_NAMES[expectedDist]}). Try to feel the shape — ${q.moveName} is a physical pattern that stays the same wherever Home is.`;
+    state.feedback = `${randFeedback(WRONG_OPENERS)} ${posLabel(s, f)} is distance ${tappedDist} (${DISTANCE_NAMES[tappedDist] || '?'}). Needed distance ${expectedDist} (${DISTANCE_NAMES[expectedDist]}). Feel the shape — ${q.moveName} stays the same wherever Home is.`;
   }
   render();
 }
@@ -1335,36 +1342,38 @@ function handleAnswer(value) {
     checkStreak();
     state.feedbackType = 'correct';
 
+    const opener = randFeedback(CORRECT_OPENERS);
     if (state.mode === 'distance') {
-      state.feedback = `Correct. ${DISTANCE_NAMES[q.correctAnswer]} — ${q.correctAnswer} semitones from Home.`;
+      state.feedback = `${opener} ${DISTANCE_NAMES[q.correctAnswer]} — ${q.correctAnswer} semitones from Home.`;
     } else if (state.mode === 'strong_beat') {
       if (q.correctAnswer === 'solid') {
         state.feedback = q.isStrong
-          ? `Right. ${DISTANCE_NAMES[q.distance]} is an anchor distance — perfect for beat ${q.beat}.`
-          : `Right. Beat ${q.beat} is a weak beat — any map distance works here, including ${DISTANCE_NAMES[q.distance]}.`;
+          ? `${opener} ${DISTANCE_NAMES[q.distance]} is an anchor — perfect for beat ${q.beat}.`
+          : `${opener} Beat ${q.beat} is weak — any map distance works, including ${DISTANCE_NAMES[q.distance]}.`;
       } else {
-        state.feedback = `Right. Beat ${q.beat} is a strong beat — it wants Home (0), Foundation (5), or Power (7), not ${DISTANCE_NAMES[q.distance]}.`;
+        state.feedback = `${opener} Beat ${q.beat} is strong — it wants Home (0), Foundation (5), or Power (7), not ${DISTANCE_NAMES[q.distance]}.`;
       }
     } else {
-      state.feedback = 'Correct.';
+      state.feedback = opener;
     }
   } else {
     state.streak = 0;
     state.feedbackType = 'wrong';
     const correctOpt = q.options.find(o => String(o.value) === String(q.correctAnswer));
 
+    const wrongOpener = randFeedback(WRONG_OPENERS);
     if (state.mode === 'distance') {
-      state.feedback = `Not quite. ${posLabel(q.targetPos.string, q.targetPos.fret)} is ${q.correctAnswer} semitones from ${noteName(q.homeSem)} — that's ${DISTANCE_NAMES[q.correctAnswer]}. Count the frets from Home to the target (wrapping across strings adds 5 per string).`;
+      state.feedback = `${wrongOpener} ${posLabel(q.targetPos.string, q.targetPos.fret)} is ${q.correctAnswer} semitones from ${noteName(q.homeSem)} — that's ${DISTANCE_NAMES[q.correctAnswer]}. Count frets from Home (wrapping across strings adds 5).`;
     } else if (state.mode === 'strong_beat') {
       if (q.isBad) {
-        state.feedback = `Beat ${q.beat} is a strong beat. ${DISTANCE_NAMES[q.distance]} (distance ${q.distance}) creates tension — strong beats want the anchors: Home (0), Foundation (5), or Power (7).`;
+        state.feedback = `${wrongOpener} Beat ${q.beat} is strong. ${DISTANCE_NAMES[q.distance]} (distance ${q.distance}) creates tension — strong beats want Home (0), Foundation (5), or Power (7).`;
       } else {
         state.feedback = q.isStrong
-          ? `That placement is solid. ${DISTANCE_NAMES[q.distance]} is an anchor distance, which is exactly what beat ${q.beat} wants.`
-          : `Beat ${q.beat} is a weak beat — any map distance is fine here. ${DISTANCE_NAMES[q.distance]} works.`;
+          ? `Actually, that placement is solid. ${DISTANCE_NAMES[q.distance]} is an anchor — exactly what beat ${q.beat} wants.`
+          : `Beat ${q.beat} is weak — any map distance is fine. ${DISTANCE_NAMES[q.distance]} works.`;
       }
     } else {
-      state.feedback = `Not quite. Answer: ${correctOpt ? correctOpt.label : q.correctAnswer}.`;
+      state.feedback = `${wrongOpener} Answer: ${correctOpt ? correctOpt.label : q.correctAnswer}.`;
     }
   }
   render();
