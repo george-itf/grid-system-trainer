@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>The Grid System — Bass Trainer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  .app {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-top: env(safe-area-inset-top, 16px);
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  h1 {
+    font-size: clamp(1.2em, 4vw, 1.6em);
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: 0.85em;
+    margin-bottom: 20px;
+  }
+
+  /* Score bar */
+  .score-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 20px;
+    padding: 10px 14px;
+    background: #16213e;
+    border-radius: 8px;
+    font-size: 0.82em;
+  }
+  .score-bar span { color: #aaa; white-space: nowrap; }
+  .score-bar .val { color: #fff; font-weight: 600; }
+  .streak { color: #f0a500 !important; }
+
+  /* Mode selector */
+  .modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .mode-btn {
+    background: #16213e;
+    border: 2px solid #2a2a4a;
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .mode-btn:hover { border-color: #4a6fa5; background: #1a2744; }
+  .mode-btn:active { border-color: #4a9eff; background: #1a2744; transform: scale(0.98); }
+  .mode-btn h3 { color: #fff; font-size: 0.95em; margin-bottom: 4px; }
+  .mode-btn p { color: #888; font-size: 0.75em; line-height: 1.4; }
+
+  /* Game area */
+  .game-area {
+    background: #16213e;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 200px;
+  }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    gap: 8px;
+  }
+
+  .question {
+    font-size: clamp(0.95em, 3vw, 1.15em);
+    color: #fff;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  .context {
+    color: #888;
+    font-size: 0.82em;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  /* Fretboard - the big mobile challenge */
+  .fretboard {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 10px 6px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fretboard table {
+    border-collapse: collapse;
+    /* Don't set width:100% - let it overflow and scroll on mobile */
+  }
+
+  .fretboard td {
+    text-align: center;
+    padding: 4px 2px;
+    font-size: 0.7em;
+    color: #555;
+    position: relative;
+  }
+
+  .fretboard .string-label {
+    color: #888;
+    font-weight: 600;
+    width: 24px;
+    min-width: 24px;
+    font-size: 0.8em;
+    position: sticky;
+    left: 0;
+    background: #0d1117;
+    z-index: 2;
+  }
+
+  .fretboard .fret-num {
+    color: #444;
+    font-size: 0.65em;
+    padding: 2px;
+  }
+
+  .fret-cell {
+    cursor: pointer;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    font-weight: 500;
+    font-size: 0.8em;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .fret-cell:active { transform: scale(0.9); }
+  .fret-cell.home-marker { background: #4a9eff33; color: #4a9eff; font-weight: 700; }
+  .fret-cell.correct { background: #2ecc71; color: #fff; }
+  .fret-cell.wrong { background: #e74c3c; color: #fff; }
+  .fret-cell.hint { background: #f0a50044; color: #f0a500; }
+
+  /* Answer buttons */
+  .answers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .answer-btn {
+    background: #1a2744;
+    border: 2px solid #2a3a5a;
+    border-radius: 8px;
+    padding: 12px 10px;
+    color: #e0e0e0;
+    font-size: 0.88em;
+    cursor: pointer;
+    transition: all 0.1s;
+    text-align: center;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .answer-btn:active { transform: scale(0.97); }
+  .answer-btn.correct { border-color: #2ecc71; background: #1a3a2a; color: #2ecc71; }
+  .answer-btn.wrong { border-color: #e74c3c; background: #3a1a1a; color: #e74c3c; }
+  .answer-btn.reveal { border-color: #2ecc71; background: #1a3a2a; color: #2ecc71; }
+  .answer-btn:disabled { cursor: default; opacity: 0.85; }
+
+  /* Jam mode */
+  .jam-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .chord-display {
+    font-size: clamp(1.8em, 6vw, 2.4em);
+    font-weight: 700;
+    color: #4a9eff;
+    min-width: 50px;
+  }
+
+  .genre-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78em;
+    font-weight: 600;
+  }
+  .genre-tag.blues { background: #6c3483; color: #d7bde2; }
+  .genre-tag.rock { background: #c0392b; color: #fadbd8; }
+
+  .beat-indicators {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .beat {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1em;
+    border: 2px solid #2a3a5a;
+    background: #1a2744;
+    color: #888;
+    flex-shrink: 0;
+  }
+  .beat.active { border-color: #4a9eff; color: #4a9eff; background: #1a2744; }
+  .beat.filled { border-color: #2ecc71; color: #2ecc71; background: #1a3a2a; }
+  .beat.strong { border-color: #f0a500; }
+  .beat.strong.active { border-color: #f0a500; color: #f0a500; }
+
+  /* Feedback */
+  .feedback {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-top: 14px;
+    font-size: 0.85em;
+    line-height: 1.5;
+  }
+  .feedback.correct { background: #1a3a2a; color: #2ecc71; border: 1px solid #2ecc7133; }
+  .feedback.wrong { background: #3a1a1a; color: #e0a0a0; border: 1px solid #e74c3c33; }
+  .feedback.info { background: #1a2744; color: #aac; border: 1px solid #4a9eff33; }
+
+  .next-btn {
+    background: #4a9eff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    color: #fff;
+    font-size: 0.92em;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 14px;
+    transition: background 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+    width: 100%;
+  }
+  .next-btn:active { background: #3a7edf; transform: scale(0.98); }
+
+  .back-btn {
+    background: #2a3a5a;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: #ccc;
+    font-size: 0.8em;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .scroll-hint {
+    color: #555;
+    font-size: 0.72em;
+    text-align: center;
+    margin-top: -10px;
+    margin-bottom: 10px;
+  }
+
+  /* Mobile specific */
+  @media (max-width: 480px) {
+    .app { padding: 12px; }
+    .modes { grid-template-columns: 1fr; gap: 8px; }
+    .answers { grid-template-columns: 1fr; gap: 6px; }
+    .game-area { padding: 14px; }
+    .score-bar { font-size: 0.78em; gap: 6px 12px; padding: 8px 10px; }
+    .fret-cell { width: 30px; height: 30px; min-width: 30px; font-size: 0.72em; }
+    .fretboard { padding: 8px 4px; }
+    .fretboard td { padding: 3px 1px; }
+    .beat { width: 40px; height: 40px; font-size: 0.9em; }
+    .answer-btn { padding: 14px 10px; font-size: 0.9em; }
+    .next-btn { padding: 14px 20px; font-size: 0.95em; }
+  }
+
+  /* Tablet-ish */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .modes { grid-template-columns: 1fr 1fr; }
+    .fret-cell { width: 32px; height: 32px; min-width: 32px; }
+  }
+
+  /* Desktop hover states - only on non-touch */
+  @media (hover: hover) {
+    .fret-cell:hover { background: #2a3a5a; color: #aaa; }
+    .answer-btn:hover { border-color: #4a6fa5; background: #1e2f52; }
+    .next-btn:hover { background: #3a8eef; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ===== THE GRID SYSTEM DATA =====
+
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const STRINGS = ['E','A','D','G'];
+const STRING_OFFSETS = [0, 5, 10, 15];
+const MAX_FRET = 12;
+
+const MAPS = {
+  blues: { name: 'Blues', distances: [0,3,5,6,7,10], css: 'blues' },
+  rock:  { name: 'Rock',  distances: [0,2,3,5,7,8,10], css: 'rock' }
+};
+
+const DISTANCE_NAMES = {
+  0: 'Home', 2: 'Second step', 3: 'Dark colour', 4: 'Bright colour',
+  5: 'Foundation', 6: 'Grit', 7: 'Power', 8: 'Bright tension',
+  9: 'Ninth', 10: 'The Seven', 11: 'Leading tone', 12: 'Octave'
+};
+
+const STRONG_DISTANCES = [0, 5, 7];
+
+function noteAt(stringIdx, fret) { return (STRING_OFFSETS[stringIdx] + fret) % 12; }
+function noteName(semitone) { return NOTES[semitone % 12]; }
+function positionLabel(stringIdx, fret) { return STRINGS[stringIdx] + fret; }
+function noteToSemitone(note) { return NOTES.indexOf(note); }
+function distanceFrom(home, stringIdx, fret) { return (noteAt(stringIdx, fret) - home + 12) % 12; }
+
+function findPositions(homeSemitone, distance) {
+  const positions = [];
+  for (let s = 0; s < 4; s++)
+    for (let f = 0; f <= MAX_FRET; f++)
+      if (distanceFrom(homeSemitone, s, f) === distance) positions.push({ string: s, fret: f });
+  return positions;
+}
+
+function randomChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ===== APP STATE =====
+
+const state = {
+  mode: null, score: 0, total: 0, streak: 0, bestStreak: 0,
+  question: null, answered: false, feedback: null, feedbackType: 'info',
+  jamChord: null, jamGenre: null, jamBeats: [null,null,null,null],
+  jamCurrentBeat: 0, jamAnswered: false, selectedCells: []
+};
+
+// ===== QUESTION GENERATORS =====
+
+function generateFindHome() {
+  const note = randomChoice(['C','D','E','F','G','A','B','C#','F#','G#','A#','D#']);
+  const semitone = noteToSemitone(note);
+  const positions = findPositions(semitone, 0).filter(p => p.fret <= 12);
+  return {
+    type: 'fretboard_tap',
+    question: `Guitarist calls "${note}" — find Home.`,
+    context: 'Tap any position where this note lives.',
+    homeSemitone: semitone, correctPositions: positions,
+    targetDistance: 0, showHome: false
+  };
+}
+
+function generateDistance() {
+  const homeNote = randomChoice(['C','D','E','F','G','A','B']);
+  const homeSemitone = noteToSemitone(homeNote);
+  const homePositions = findPositions(homeSemitone, 0).filter(p => p.fret <= 7);
+  const homePos = randomChoice(homePositions);
+  const targetString = Math.floor(Math.random() * 4);
+  const targetFret = Math.floor(Math.random() * 13);
+  const dist = distanceFrom(homeSemitone, targetString, targetFret);
+  const wrongDistances = [];
+  while (wrongDistances.length < 3) {
+    const d = Math.floor(Math.random() * 12);
+    if (d !== dist && !wrongDistances.includes(d)) wrongDistances.push(d);
+  }
+  const options = shuffle([dist, ...wrongDistances]);
+  return {
+    type: 'multiple_choice',
+    question: `Home is ${noteName(homeSemitone)} at ${positionLabel(homePos.string, homePos.fret)}. What distance is ${positionLabel(targetString, targetFret)}?`,
+    context: 'Count the semitones from Home to the target.',
+    homeSemitone, homePos, targetPos: { string: targetString, fret: targetFret },
+    correctAnswer: dist,
+    options: options.map(d => ({ label: `${d} — ${DISTANCE_NAMES[d] || 'Distance ' + d}`, value: d }))
+  };
+}
+
+function generateMapPicker() {
+  const distance = Math.floor(Math.random() * 11) + 1;
+
+  if (Math.random() > 0.5) {
+    const bluesOnly = MAPS.blues.distances.filter(d => !MAPS.rock.distances.includes(d) && d !== 0);
+    const rockOnly = MAPS.rock.distances.filter(d => !MAPS.blues.distances.includes(d) && d !== 0);
+    const shared = MAPS.blues.distances.filter(d => MAPS.rock.distances.includes(d) && d !== 0);
+    const pool = [...bluesOnly.map(d => ({d, answer: 'blues_only'})),
+                  ...rockOnly.map(d => ({d, answer: 'rock_only'})),
+                  ...shared.map(d => ({d, answer: 'both'}))];
+    const pick = randomChoice(pool);
+    return {
+      type: 'multiple_choice',
+      question: `Distance ${pick.d} (${DISTANCE_NAMES[pick.d] || '?'}) — which map?`,
+      context: 'Blues: 0, 3, 5, 6, 7, 10 — Rock: 0, 2, 3, 5, 7, 8, 10',
+      correctAnswer: pick.answer,
+      options: shuffle([
+        { label: 'Blues only', value: 'blues_only' },
+        { label: 'Rock only', value: 'rock_only' },
+        { label: 'Both', value: 'both' }
+      ])
+    };
+  } else {
+    const genre = randomChoice(['blues', 'rock']);
+    const map = MAPS[genre];
+    const isInMap = map.distances.includes(distance);
+    return {
+      type: 'multiple_choice',
+      question: `Playing ${map.name}. Is distance ${distance} (${DISTANCE_NAMES[distance] || '?'}) in your map?`,
+      context: `Think about the ${map.name} map distances.`,
+      correctAnswer: isInMap ? 'yes' : 'no',
+      options: [
+        { label: 'Yes, in the map', value: 'yes' },
+        { label: 'No, not in this map', value: 'no' }
+      ]
+    };
+  }
+}
+
+function generateStrongBeat() {
+  const distance = randomChoice([0, 2, 3, 5, 6, 7, 8, 10]);
+  const beat = randomChoice([1, 2, 3, 4]);
+  const isStrong = (beat === 1 || beat === 3);
+  const isStrongDist = STRONG_DISTANCES.includes(distance);
+  const isBad = isStrong && !isStrongDist;
+  return {
+    type: 'multiple_choice',
+    question: `Beat ${beat}, distance ${distance} (${DISTANCE_NAMES[distance]}) — good placement?`,
+    context: 'Strong beats (1 & 3) want Home, Foundation, or Power. Weak beats (2 & 4) take anything.',
+    correctAnswer: isBad ? 'not_ideal' : 'solid',
+    options: [
+      { label: 'Solid — works here', value: 'solid' },
+      { label: 'Not ideal — wrong beat', value: 'not_ideal' }
+    ]
+  };
+}
+
+function generateJam() {
+  const chord = randomChoice(['C','D','E','F','G','A','B']);
+  const genre = randomChoice(['blues', 'rock']);
+  return { chord, genre, homeSemitone: noteToSemitone(chord), map: MAPS[genre] };
+}
+
+function generateFretboardDistance() {
+  const homeNote = randomChoice(['C','D','E','F','G','A','B']);
+  const homeSemitone = noteToSemitone(homeNote);
+  const homePositions = findPositions(homeSemitone, 0).filter(p => p.fret <= 7);
+  const homePos = randomChoice(homePositions);
+  const genre = randomChoice(['blues', 'rock']);
+  const map = MAPS[genre];
+  const targetDist = randomChoice(map.distances.filter(d => d !== 0));
+  const correctPositions = findPositions(homeSemitone, targetDist).filter(p => p.fret <= 12);
+  return {
+    type: 'fretboard_tap',
+    question: `Home is ${homeNote} at ${positionLabel(homePos.string, homePos.fret)}. Tap distance ${targetDist} (${DISTANCE_NAMES[targetDist]}).`,
+    context: `Playing ${map.name}. Find distance ${targetDist} on the neck.`,
+    homeSemitone, homePos, correctPositions, targetDistance: targetDist, showHome: true
+  };
+}
+
+// ===== RENDERING =====
+
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = !state.mode ? renderModeSelect() : renderGame();
+  attachEvents();
+}
+
+function renderModeSelect() {
+  return `
+    <h1>The Grid System</h1>
+    <p class="subtitle">Bass Theory Trainer</p>
+    ${renderScoreBar()}
+    <div class="modes">
+      <div class="mode-btn" data-mode="find_home">
+        <h3>Find Home</h3>
+        <p>Chord gets called. Find it on the neck.</p>
+      </div>
+      <div class="mode-btn" data-mode="distance">
+        <h3>Name the Distance</h3>
+        <p>Given Home and a target, work out the distance.</p>
+      </div>
+      <div class="mode-btn" data-mode="map_picker">
+        <h3>Know Your Maps</h3>
+        <p>Blues or Rock? Which distances belong where.</p>
+      </div>
+      <div class="mode-btn" data-mode="strong_beat">
+        <h3>Strong Beats</h3>
+        <p>Right distance on the right beat?</p>
+      </div>
+      <div class="mode-btn" data-mode="jam">
+        <h3>Jam Simulator</h3>
+        <p>Chord gets called. Pick notes for each beat.</p>
+      </div>
+      <div class="mode-btn" data-mode="fretboard_distance">
+        <h3>Fretboard Tap</h3>
+        <p>Given a distance, find it on the neck.</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderScoreBar() {
+  const pct = state.total > 0 ? Math.round((state.score / state.total) * 100) : 0;
+  return `
+    <div class="score-bar">
+      <span>Score: <span class="val">${state.score}/${state.total}</span></span>
+      <span>Accuracy: <span class="val">${state.total > 0 ? pct + '%' : '—'}</span></span>
+      <span>Streak: <span class="val streak">${state.streak}${state.streak >= 3 ? ' 🔥' : ''}</span></span>
+      <span>Best: <span class="val">${state.bestStreak}</span></span>
+    </div>
+  `;
+}
+
+function renderGame() {
+  let content = '';
+  if (state.mode === 'jam') content = renderJamMode();
+  else if (state.question) {
+    content = state.question.type === 'fretboard_tap' ? renderFretboardQuestion() : renderMultipleChoice();
+  }
+
+  const titles = {
+    find_home: 'Find Home', distance: 'Name the Distance', map_picker: 'Know Your Maps',
+    strong_beat: 'Strong Beats', jam: 'Jam Simulator', fretboard_distance: 'Fretboard Tap'
+  };
+
+  return `
+    <div class="game-header">
+      <h1>${titles[state.mode] || ''}</h1>
+      <button class="back-btn" data-action="back">← Modes</button>
+    </div>
+    ${renderScoreBar()}
+    <div class="game-area">${content}</div>
+  `;
+}
+
+function renderFretboard(options = {}) {
+  const { homeSemitone, homePos, targetPos, showHome, correctPositions, clickable, selectedCells, highlightMap } = options;
+  const isMobile = window.innerWidth <= 480;
+
+  let html = '<div class="fretboard"><table>';
+  html += '<tr><td></td>';
+  for (let f = 0; f <= MAX_FRET; f++) html += `<td class="fret-num">${f}</td>`;
+  html += '</tr>';
+
+  for (let s = 0; s < 4; s++) {
+    html += `<tr><td class="string-label">${STRINGS[s]}</td>`;
+    for (let f = 0; f <= MAX_FRET; f++) {
+      let cls = 'fret-cell';
+      let label = '';
+
+      if (showHome && homePos && homePos.string === s && homePos.fret === f) {
+        cls += ' home-marker'; label = 'H';
+      }
+      if (targetPos && targetPos.string === s && targetPos.fret === f) {
+        cls += ' home-marker'; label = '?';
+      }
+      if (selectedCells) {
+        const sel = selectedCells.find(c => c.string === s && c.fret === f);
+        if (sel) { cls += sel.correct ? ' correct' : ' wrong'; label = sel.correct ? '✓' : '✗'; }
+      }
+      if (highlightMap && homeSemitone !== undefined) {
+        const dist = distanceFrom(homeSemitone, s, f);
+        if (highlightMap.includes(dist)) { cls += ' hint'; label = label || dist; }
+      }
+      if (correctPositions && state.answered) {
+        const isCorrect = correctPositions.find(c => c.string === s && c.fret === f);
+        if (isCorrect && !selectedCells?.find(c => c.string === s && c.fret === f)) {
+          cls += ' hint'; label = label || noteName(noteAt(s, f));
+        }
+      }
+
+      const clickAttr = clickable ? `data-string="${s}" data-fret="${f}" data-clickable="true"` : '';
+      html += `<td><span class="${cls}" ${clickAttr}>${label}</span></td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</table></div>';
+  if (clickable && isMobile) html += '<p class="scroll-hint">Swipe to scroll the fretboard →</p>';
+  return html;
+}
+
+function renderFretboardQuestion() {
+  const q = state.question;
+  let html = `
+    <div class="question">${q.question}</div>
+    <div class="context">${q.context}</div>
+    ${renderFretboard({
+      homeSemitone: q.homeSemitone, homePos: q.homePos, showHome: q.showHome,
+      correctPositions: state.answered ? q.correctPositions : null,
+      clickable: !state.answered, selectedCells: state.selectedCells, targetPos: q.targetPos
+    })}
+  `;
+  if (state.feedback) html += `<div class="feedback ${state.feedbackType}">${state.feedback}</div>`;
+  if (state.answered) html += `<button class="next-btn" data-action="next">Next →</button>`;
+  return html;
+}
+
+function renderMultipleChoice() {
+  const q = state.question;
+  let fretboardHtml = '';
+  if (q.homePos || q.targetPos) {
+    fretboardHtml = renderFretboard({
+      homeSemitone: q.homeSemitone, homePos: q.homePos, showHome: true,
+      targetPos: q.targetPos, clickable: false, selectedCells: state.selectedCells
+    });
+  }
+  let html = `
+    <div class="question">${q.question}</div>
+    <div class="context">${q.context}</div>
+    ${fretboardHtml}
+    <div class="answers">
+  `;
+  q.options.forEach(opt => {
+    let cls = 'answer-btn';
+    if (state.answered) {
+      if (String(opt.value) === String(q.correctAnswer)) cls += ' correct';
+      else if (String(opt.value) === String(state.selectedAnswer)) cls += ' wrong';
+    }
+    html += `<button class="${cls}" data-answer="${opt.value}" ${state.answered ? 'disabled' : ''}>${opt.label}</button>`;
+  });
+  html += '</div>';
+  if (state.feedback) html += `<div class="feedback ${state.feedbackType}">${state.feedback}</div>`;
+  if (state.answered) html += `<button class="next-btn" data-action="next">Next →</button>`;
+  return html;
+}
+
+function renderJamMode() {
+  if (!state.jamChord) {
+    const jam = generateJam();
+    Object.assign(state, {
+      jamChord: jam.chord, jamGenre: jam.genre, jamHomeSemitone: jam.homeSemitone,
+      jamMap: jam.map, jamBeats: [null,null,null,null], jamCurrentBeat: 0,
+      jamAnswered: false, jamFeedback: null
+    });
+  }
+
+  let beatsHtml = '<div class="beat-indicators">';
+  for (let i = 0; i < 4; i++) {
+    let cls = 'beat';
+    if (i === state.jamCurrentBeat && !state.jamAnswered) cls += ' active';
+    if (state.jamBeats[i] !== null) cls += ' filled';
+    if (i === 0 || i === 2) cls += ' strong';
+    beatsHtml += `<div class="${cls}">${state.jamBeats[i] !== null ? state.jamBeats[i].distance : (i + 1)}</div>`;
+  }
+  beatsHtml += '</div>';
+
+  const showHints = state.jamAnswered ? state.jamMap.distances : null;
+
+  return `
+    <div class="jam-bar">
+      <div class="chord-display">${state.jamChord}</div>
+      <span class="genre-tag ${state.jamMap.css}">${state.jamMap.name}</span>
+    </div>
+    <p class="context">Beat ${state.jamCurrentBeat + 1} of 4. ${(state.jamCurrentBeat === 0 || state.jamCurrentBeat === 2) ? '⚡ Strong beat — Home, Foundation, or Power.' : 'Weak beat — any map distance.'}</p>
+    ${beatsHtml}
+    ${renderFretboard({
+      homeSemitone: state.jamHomeSemitone, clickable: !state.jamAnswered,
+      selectedCells: state.selectedCells || [], highlightMap: showHints
+    })}
+    ${state.jamFeedback ? `<div class="feedback ${state.feedbackType}">${state.jamFeedback}</div>` : ''}
+    ${state.jamAnswered ? '<button class="next-btn" data-action="next_jam">Next Chord →</button>' : ''}
+  `;
+}
+
+// ===== GAME LOGIC =====
+
+function startMode(mode) {
+  state.mode = mode;
+  state.answered = false;
+  state.feedback = null;
+  state.selectedCells = [];
+  state.jamChord = null;
+  nextQuestion();
+}
+
+function nextQuestion() {
+  Object.assign(state, { answered: false, feedback: null, feedbackType: 'info', selectedCells: [], selectedAnswer: null });
+
+  const generators = {
+    find_home: generateFindHome, distance: generateDistance,
+    map_picker: generateMapPicker, strong_beat: generateStrongBeat,
+    fretboard_distance: generateFretboardDistance
+  };
+
+  if (state.mode === 'jam') {
+    state.jamChord = null;
+    state.jamFeedback = null;
+    state.selectedCells = [];
+  } else {
+    state.question = generators[state.mode]();
+  }
+  render();
+}
+
+function handleFretboardTap(stringIdx, fret) {
+  if (state.mode === 'jam') return handleJamTap(stringIdx, fret);
+  if (state.answered) return;
+
+  const q = state.question;
+  const isCorrect = q.correctPositions.some(p => p.string === stringIdx && p.fret === fret);
+
+  state.selectedCells = [{ string: stringIdx, fret: fret, correct: isCorrect }];
+  state.answered = true;
+  state.total++;
+
+  if (isCorrect) {
+    state.score++; state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    state.feedback = `Correct. ${positionLabel(stringIdx, fret)} = ${noteName(noteAt(stringIdx, fret))}. Other positions highlighted.`;
+    state.feedbackType = 'correct';
+  } else {
+    state.streak = 0;
+    state.feedback = `${positionLabel(stringIdx, fret)} is ${noteName(noteAt(stringIdx, fret))}, not what we need. Correct positions highlighted.`;
+    state.feedbackType = 'wrong';
+  }
+  render();
+}
+
+function handleJamTap(stringIdx, fret) {
+  if (state.jamAnswered) return;
+
+  const dist = distanceFrom(state.jamHomeSemitone, stringIdx, fret);
+  const inMap = state.jamMap.distances.includes(dist);
+  const isStrongBeat = (state.jamCurrentBeat === 0 || state.jamCurrentBeat === 2);
+  const isStrongDist = STRONG_DISTANCES.includes(dist);
+
+  state.selectedCells = [...(state.selectedCells || []), { string: stringIdx, fret: fret, correct: inMap }];
+  state.jamBeats[state.jamCurrentBeat] = {
+    distance: dist, position: positionLabel(stringIdx, fret),
+    inMap, goodPlacement: inMap && (!isStrongBeat || isStrongDist)
+  };
+
+  if (state.jamCurrentBeat < 3) { state.jamCurrentBeat++; render(); return; }
+
+  state.jamAnswered = true;
+  state.total++;
+
+  const allInMap = state.jamBeats.every(b => b.inMap);
+  const strongBeatsGood = state.jamBeats[0].goodPlacement && state.jamBeats[2].goodPlacement;
+
+  const parts = state.jamBeats.map((b, i) => {
+    const strong = (i === 0 || i === 2);
+    let v = '';
+    if (!b.inMap) v = `dist ${b.distance} not in ${state.jamMap.name} map`;
+    else if (strong && !STRONG_DISTANCES.includes(b.distance)) v = `${DISTANCE_NAMES[b.distance]} on strong beat — works but not ideal`;
+    else v = `${DISTANCE_NAMES[b.distance] || 'dist ' + b.distance} — solid`;
+    return `Beat ${i+1}: ${v}`;
+  });
+
+  if (allInMap && strongBeatsGood) {
+    state.score++; state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    state.feedbackType = 'correct';
+    state.jamFeedback = `Strong bar. All in map, anchors on strong beats. ${parts.join('. ')}.`;
+  } else if (allInMap) {
+    state.score++; state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    state.feedbackType = 'correct';
+    state.jamFeedback = `All in the map — good. Try stronger distances on beats 1 and 3. ${parts.join('. ')}.`;
+  } else {
+    state.streak = 0;
+    state.feedbackType = 'wrong';
+    state.jamFeedback = `Some notes outside the ${state.jamMap.name} map. ${parts.join('. ')}.`;
+  }
+  render();
+}
+
+function handleAnswer(value) {
+  if (state.answered) return;
+  const q = state.question;
+  const isCorrect = String(value) === String(q.correctAnswer);
+
+  state.answered = true;
+  state.selectedAnswer = value;
+  state.total++;
+
+  if (isCorrect) {
+    state.score++; state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    state.feedbackType = 'correct';
+    if (state.mode === 'distance') {
+      state.feedback = `Correct. ${DISTANCE_NAMES[q.correctAnswer]} — ${q.correctAnswer} semitones from Home.`;
+    } else if (state.mode === 'strong_beat') {
+      state.feedback = q.correctAnswer === 'solid' ? 'Right. That placement works.' : 'Right. Strong beats want anchors (0, 5, 7).';
+    } else {
+      state.feedback = 'Correct.';
+    }
+  } else {
+    state.streak = 0;
+    state.feedbackType = 'wrong';
+    const correctOpt = q.options.find(o => String(o.value) === String(q.correctAnswer));
+    state.feedback = `Not quite. Answer: ${correctOpt ? correctOpt.label : q.correctAnswer}.`;
+    if (state.mode === 'distance') {
+      state.feedback += ` ${positionLabel(q.targetPos.string, q.targetPos.fret)} is ${q.correctAnswer} semitones from ${noteName(q.homeSemitone)}.`;
+    }
+  }
+  render();
+}
+
+// ===== EVENT HANDLING =====
+
+function attachEvents() {
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => startMode(btn.dataset.mode));
+  });
+  document.querySelectorAll('[data-action="back"]').forEach(btn => {
+    btn.addEventListener('click', () => { state.mode = null; state.question = null; render(); });
+  });
+  document.querySelectorAll('[data-action="next"]').forEach(btn => {
+    btn.addEventListener('click', () => nextQuestion());
+  });
+  document.querySelectorAll('[data-action="next_jam"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      Object.assign(state, { jamChord: null, jamFeedback: null, selectedCells: [], jamCurrentBeat: 0, jamAnswered: false });
+      render();
+    });
+  });
+  document.querySelectorAll('[data-clickable="true"]').forEach(cell => {
+    cell.addEventListener('click', () => handleFretboardTap(parseInt(cell.dataset.string), parseInt(cell.dataset.fret)));
+  });
+  document.querySelectorAll('.answer-btn').forEach(btn => {
+    if (!btn.disabled) btn.addEventListener('click', () => handleAnswer(btn.dataset.answer));
+  });
+}
+
+// ===== INIT =====
+render();
+window.addEventListener('resize', () => { /* fretboard scroll hint updates on re-render */ });
+</script>
+</body>
+</html>
